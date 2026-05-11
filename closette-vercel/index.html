@@ -1,0 +1,3517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Closette">
+<meta name="theme-color" content="#1A1A1A">
+<meta name="description" content="오늘 뭐 입을까 — 날씨 기반 착장 추천 앱">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<title>Closette</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ── THEMES ── */
+body[data-theme="default"]{--accent:#1A1A1A;--accent-light:#F0EFEC;--spring:#EDF3EC;--spring-text:#346538;--summer:#E1F3FE;--summer-text:#1F6C9F;--fall:#FBF3DB;--fall-text:#956400;--winter:#F0EFFE;--winter-text:#5B4FBE}
+body[data-theme="bloom"]{--accent:#9B4F8E;--accent-light:#F9EFF8;--spring:#FAE8F5;--spring-text:#7A2870;--summer:#FDE8F0;--summer-text:#9B2052;--fall:#F5E8FA;--fall-text:#6B2880;--winter:#EAE8FA;--winter-text:#3D2880}
+body[data-theme="earth"]{--accent:#5C4033;--accent-light:#F5EDE8;--spring:#EFF5E8;--spring-text:#3B5228;--summer:#FBF0E0;--summer-text:#7A4F10;--fall:#F5EBD8;--fall-text:#8B4513;--winter:#E8EFF5;--winter-text:#2B4A5C}
+body[data-theme="mono"]{--accent:#2A2A2A;--accent-light:#F2F2F2;--spring:#EFEFEF;--spring-text:#444;--summer:#E8E8E8;--summer-text:#333;--fall:#E2E2E2;--fall-text:#2A2A2A;--winter:#F8F8F8;--winter-text:#555}
+:root{--bg:#F7F6F3;--surface:#FFF;--border:rgba(0,0,0,.08);--text-primary:#1A1A1A;--text-secondary:#787774;--text-muted:#B0ADA8;--sunny-bg:#FBF3DB;--sunny-fg:#956400;--cloudy-bg:#EAEAEA;--cloudy-fg:#555;--rainy-bg:#E1F3FE;--rainy-fg:#1F6C9F;--snowy-bg:#F0EFFE;--snowy-fg:#5B4FBE}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;overflow-x:hidden;transition:background .3s}
+
+/* ── ONBOARDING ── */
+.onboard-screen{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center}
+.onboard-box{width:480px;max-width:92vw;padding:40px 36px}
+.onboard-step{display:none}
+.onboard-step.active{display:block}
+.onboard-logo{font-family:'Playfair Display',serif;font-size:28px;letter-spacing:.1em;margin-bottom:6px}
+.onboard-logo em{font-style:italic;font-weight:400}
+.onboard-sub{font-size:14px;color:var(--text-secondary);margin-bottom:32px;line-height:1.6}
+.onboard-label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px;display:block}
+.onboard-input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary);background:var(--surface);outline:none;transition:border-color .14s;margin-bottom:0}
+.onboard-input:focus{border-color:var(--accent)}
+.lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px}
+.lang-btn{padding:11px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .13s;text-align:left;display:flex;align-items:center;gap:8px}
+.lang-btn:hover{border-color:var(--accent)}
+.lang-btn.sel{border-color:var(--accent);background:var(--accent-light);font-weight:500}
+.lang-flag{font-size:18px}
+.onboard-next{width:100%;padding:13px;border-radius:9px;background:var(--accent);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .14s;margin-top:8px}
+.onboard-next:hover{opacity:.87}
+.onboard-progress{display:flex;gap:5px;margin-bottom:28px}
+.progress-dot{height:3px;border-radius:2px;background:var(--border);transition:all .3s;flex:1}
+.progress-dot.done{background:var(--accent)}
+.city-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-bottom:20px}
+.city-btn{padding:11px 14px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .13s;text-align:left;display:flex;align-items:center;justify-content:space-between}
+.city-btn:hover{border-color:var(--accent)}
+.city-btn.sel{border-color:var(--accent);background:var(--accent-light);font-weight:500}
+.city-country{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right));height:60px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Playfair Display',serif;font-size:20px;letter-spacing:.1em}
+.logo em{font-style:italic;font-weight:400}
+.header-right{display:flex;gap:8px;align-items:center}
+
+/* ── TODAY HERO ── */
+/* ── TODAY HERO — split layout ── */
+
+/* ── WEATHER STRIP ── */
+.wx-strip{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:38px;display:flex;align-items:center;gap:8px;
+  font-size:12px;overflow:hidden;flex-wrap:nowrap;
+}
+.wx-strip-temp{
+  font-family:'Playfair Display',serif;font-size:15px;font-weight:400;
+  color:var(--text-primary);letter-spacing:-.02em;flex-shrink:0;white-space:nowrap;
+}
+.wx-strip-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;
+  border:1px solid var(--border);flex-shrink:0;white-space:nowrap;
+}
+.wx-strip-chip.c-sunny {background:var(--sunny-bg); color:var(--sunny-fg);}
+.wx-strip-chip.c-cloudy{background:var(--cloudy-bg);color:var(--cloudy-fg);}
+.wx-strip-chip.c-rainy {background:var(--rainy-bg); color:var(--rainy-fg);}
+.wx-strip-chip.c-snowy {background:var(--snowy-bg); color:var(--snowy-fg);}
+.wx-strip-desc{font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.wx-strip-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.wx-strip-city{font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);white-space:nowrap;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;max-width:90px;}
+.wx-strip-refresh{
+  font-size:10px;padding:3px 8px;border-radius:5px;
+  border:1px solid var(--border);background:transparent;
+  cursor:pointer;color:var(--text-muted);font-family:'DM Sans',sans-serif;
+  transition:all .13s;white-space:nowrap;flex-shrink:0;
+}
+.wx-strip-refresh:hover{color:var(--accent);border-color:var(--accent);}
+.wx-strip-loading{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;}
+.wx-dot{width:4px;height:4px;border-radius:50%;background:var(--text-muted);animation:pulse .9s ease-in-out infinite;}
+.wx-dot:nth-child(2){animation-delay:.15s;}.wx-dot:nth-child(3){animation-delay:.3s;}
+
+/* ── TAB BAR ── */
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex}
+.tab{padding:11px 15px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .12s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-badge{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:600;padding:1px 5px;border-radius:9999px}
+
+/* ── LAYOUT ── */
+.app-body{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 60px - 37px - 41px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:4px}
+.sidebar-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:0 8px;margin-bottom:2px;margin-top:12px}
+.sidebar-label:first-child{margin-top:0}
+.filter-btn{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:none;background:transparent;text-align:left;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-secondary);transition:all .12s;width:100%}
+.filter-btn:hover{background:var(--accent-light);color:var(--text-primary)}
+.filter-btn.active{background:var(--accent-light);color:var(--accent);font-weight:500}
+.filter-btn.wx-active-sunny{background:var(--sunny-bg);color:var(--sunny-fg);font-weight:500}
+.filter-btn.wx-active-cloudy{background:var(--cloudy-bg);color:var(--cloudy-fg);font-weight:500}
+.filter-btn.wx-active-rainy{background:var(--rainy-bg);color:var(--rainy-fg);font-weight:500}
+.filter-btn.wx-active-snowy{background:var(--snowy-bg);color:var(--snowy-fg);font-weight:500}
+.drawer-btn.wx-active-sunny{background:var(--sunny-bg)!important;color:var(--sunny-fg)!important;font-weight:600}
+.drawer-btn.wx-active-cloudy{background:var(--cloudy-bg)!important;color:var(--cloudy-fg)!important;font-weight:600}
+.drawer-btn.wx-active-rainy{background:var(--rainy-bg)!important;color:var(--rainy-fg)!important;font-weight:600}
+.drawer-btn.wx-active-snowy{background:var(--snowy-bg)!important;color:var(--snowy-fg)!important;font-weight:600}
+.drawer-btn.season-active-spring{background:var(--spring)!important;color:var(--spring-text)!important;font-weight:600}
+.drawer-btn.season-active-summer{background:var(--summer)!important;color:var(--summer-text)!important;font-weight:600}
+.drawer-btn.season-active-fall{background:var(--fall)!important;color:var(--fall-text)!important;font-weight:600}
+.drawer-btn.season-active-winter{background:var(--winter)!important;color:var(--winter-text)!important;font-weight:600}
+.s-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.d-all{background:var(--text-muted)}.d-spring{background:var(--spring-text)}.d-summer{background:var(--summer-text)}.d-fall{background:var(--fall-text)}.d-winter{background:var(--winter-text)}
+.fcnt{margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted)}
+.wico{font-size:13px;width:16px;text-align:center}
+.s-div{height:1px;background:var(--border);margin:6px 0}
+
+/* ── PANELS ── */
+.panels{overflow:auto}
+.panel{padding:22px;display:none}
+.panel.active{display:block}
+.panel-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.panel-title{font-family:'Playfair Display',serif;font-size:26px;line-height:1.1;letter-spacing:-.02em}
+.panel-title em{font-style:italic;color:var(--text-secondary)}
+.rcnt{font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace}
+
+/* ── GRID ── */
+.lookbook-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px}
+.look-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .15s;animation:fadeUp .3s ease both}
+.look-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.07);transform:translateY(-2px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card-img-wrap{width:100%;aspect-ratio:3/4;overflow:hidden;position:relative;background:var(--bg)}
+.card-img-wrap img{width:100%;height:100%;object-fit:cover}
+.card-worn-today{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);color:white;font-size:10px;font-weight:500;padding:3px 8px;border-radius:6px;letter-spacing:.03em}
+.card-no-photo{width:100%;aspect-ratio:3/4;background:linear-gradient(135deg,#F0EFEC,#E8E6E1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--text-muted);font-size:26px}
+.card-no-photo span{font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.card-body{padding:10px 12px}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.tag{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:8px}
+.tag-spring{background:var(--spring);color:var(--spring-text)}.tag-summer{background:var(--summer);color:var(--summer-text)}.tag-fall{background:var(--fall);color:var(--fall-text)}.tag-winter{background:var(--winter);color:var(--winter-text)}
+.wbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:10px}
+.wb-sunny{background:var(--sunny-bg);color:var(--sunny-fg)}.wb-cloudy{background:var(--cloudy-bg);color:var(--cloudy-fg)}.wb-rainy{background:var(--rainy-bg);color:var(--rainy-fg)}.wb-snowy{background:var(--snowy-bg);color:var(--snowy-fg)}
+.card-colors{display:flex;gap:3px;margin-top:4px;align-items:center}
+.color-dot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
+.card-vibe{font-size:10px;color:var(--text-muted);margin-left:4px;font-family:'DM Mono',monospace}
+.card-hashtags{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px}
+.htag-pill{font-size:10px;color:var(--accent);background:var(--accent-light);padding:1px 6px;border-radius:9999px;cursor:pointer;font-family:'DM Mono',monospace}
+.htag-pill:hover{opacity:.7}
+.card-date{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-top:4px}
+.card-worn-row{padding:6px 12px 10px;border-top:1px solid var(--border)}
+.worn-today-btn{width:100%;padding:6px;border-radius:7px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .13s;display:flex;align-items:center;justify-content:center;gap:5px}
+.worn-today-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+.worn-today-btn.worn{background:var(--accent);color:white;border-color:var(--accent)}
+
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state .eico{font-size:40px;margin-bottom:12px}
+.empty-state p{font-family:'Playfair Display',serif;font-size:17px;font-style:italic;margin-bottom:5px;color:var(--text-secondary)}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:5px}
+.stat-value{font-family:'Playfair Display',serif;font-size:26px;line-height:1;color:var(--text-primary)}
+.stat-sub{font-size:11px;color:var(--text-secondary);margin-top:4px}
+.season-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:10px}
+.season-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.season-bar-row:last-child{margin-bottom:0}
+.season-bar-label{width:70px;font-size:12px;color:var(--text-secondary);flex-shrink:0}
+.season-bar-track{flex:1;height:6px;background:var(--bg);border-radius:9999px;overflow:hidden}
+.season-bar-fill{height:100%;border-radius:9999px;transition:width .5s cubic-bezier(.16,1,.3,1)}
+.season-bar-num{width:24px;text-align:right;font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted)}
+.notif-banner{background:var(--accent-light);border:1px solid var(--border);border-radius:10px;padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:18px}
+.notif-text{flex:1}.notif-text strong{font-size:13px;font-weight:500;display:block;margin-bottom:2px}.notif-text span{font-size:12px;color:var(--text-secondary)}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--accent)}
+.toggle-thumb{position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-track.on .toggle-thumb{left:19px}
+
+/* ── HASHTAG PANEL ── */
+.htag-search-wrap{position:relative;margin-bottom:16px}
+.htag-search{width:100%;padding:9px 13px 9px 32px;border:1px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text-primary);background:var(--surface);outline:none;transition:border-color .13s}
+.htag-search:focus{border-color:var(--accent)}
+.htag-search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-muted);pointer-events:none;font-family:'DM Mono',monospace;font-weight:600}
+.htag-cloud{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+.htag-cloud-item{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s}
+.htag-cloud-item:hover{border-color:var(--accent);background:var(--accent-light)}
+.htag-cloud-item.active{background:var(--accent);color:white;border-color:var(--accent)}
+.htag-cloud-item.active .htag-name,.htag-cloud-item.active 
+.htag-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+.htag-cnt{font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);background:var(--bg);padding:1px 5px;border-radius:9999px}
+.htag-results-label{font-size:11px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
+
+/* ── SETTINGS PANEL ── */
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:14px;overflow:hidden}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-label{font-size:13px;font-weight:500}
+.settings-row-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.settings-row-right{display:flex;align-items:center;gap:10px}
+.settings-select{padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none;cursor:pointer}
+.settings-section-title{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);padding:12px 18px 6px}
+
+/* ── PREMIUM ── */
+.premium-hero{text-align:center;padding:26px 20px 20px;margin-bottom:22px;background:linear-gradient(135deg,#FAF6EC,#F5EDD8);border-radius:13px;border:1px solid rgba(201,168,76,.2)}
+.premium-crown{font-size:30px;margin-bottom:8px}
+.premium-hero h2{font-family:'Playfair Display',serif;font-size:21px;margin-bottom:5px;color:#3D2800}
+.premium-hero p{font-size:13px;color:#7A5C00;line-height:1.6}
+.premium-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.prem-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px;position:relative}
+.prem-card.unlocked{border-color:rgba(201,168,76,.35)}
+.prem-card-icon{font-size:20px;margin-bottom:8px}
+.prem-card h3{font-size:14px;font-weight:500;margin-bottom:4px}
+.prem-card p{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.prem-lock{position:absolute;top:11px;right:11px;font-size:12px;opacity:.4}
+.prem-badge-unlocked{display:inline-block;margin-top:8px;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:9999px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#3D2800}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:11px}
+.theme-swatch{border-radius:8px;padding:9px 7px;cursor:pointer;border:2px solid transparent;transition:all .13s;text-align:center}
+.theme-swatch:hover{transform:scale(1.04)}
+.theme-swatch.active{border-color:var(--accent)}
+.theme-swatch-colors{display:flex;gap:3px;justify-content:center;margin-bottom:5px}
+.theme-dot{width:10px;height:10px;border-radius:50%}
+.theme-swatch-name{font-size:10px;font-weight:500;color:var(--text-secondary)}
+.prem-cta{width:100%;padding:12px;border-radius:8px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#3D2800;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;transition:all .14s;margin-bottom:6px}
+.prem-cta:hover{opacity:.9}
+.prem-subtext{font-size:11px;color:var(--text-muted);text-align:center}
+.prem-feature-btn{margin-top:9px;padding:7px 12px;border-radius:7px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#3D2800;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;transition:all .14s}
+.prem-feature-btn:hover{opacity:.9}
+
+/* ── BUTTONS ── */
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 15px;border-radius:6px;cursor:pointer;border:none;transition:all .14s}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{opacity:.87;transform:scale(.98)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--accent-light)}
+.btn-pro{background:linear-gradient(135deg,#C9A84C,#E8C96A);color:#3D2800;font-size:12px;padding:6px 11px;border-radius:6px;border:none;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px}
+.btn-del{background:transparent;color:#9F2F2D;border:1px solid #FDEBEC;font-size:12px;padding:7px 13px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .13s}
+.btn-del:hover{background:#FDEBEC}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.36);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(5px)}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:14px;width:480px;max-width:92vw;max-height:90vh;overflow-y:auto;transform:translateY(14px);transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.overlay.open .modal{transform:translateY(0)}
+.modal-sm{width:380px}.modal-rnd{width:480px}
+.modal-head{padding:19px 23px 13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-family:'Playfair Display',serif;font-size:19px}
+.mclose{width:27px;height:27px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);transition:background .12s}
+.mclose:hover{background:var(--bg)}
+.modal-body{padding:18px 23px 23px}
+
+/* ── FORM ── */
+.fg{margin-bottom:15px}
+.flabel{display:block;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:7px}
+.flabel-note{color:var(--text-muted);font-size:10px;font-weight:400;text-transform:none;letter-spacing:0}
+.finput,.ftextarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary);background:var(--bg);outline:none;transition:border-color .13s}
+.finput:focus,.ftextarea:focus{border-color:var(--accent);background:white}
+.ftextarea{resize:vertical;min-height:65px}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 11px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
+.chip:hover{border-color:var(--accent)}
+.chip.sel{background:var(--text-primary);color:var(--bg);border-color:var(--text-primary)}
+.chip-spring.sel{background:var(--spring-text);border-color:var(--spring-text)}.chip-summer.sel{background:var(--summer-text);border-color:var(--summer-text)}.chip-fall.sel{background:var(--fall-text);border-color:var(--fall-text)}.chip-winter.sel{background:var(--winter-text);border-color:var(--winter-text)}
+
+/* color swatches */
+.color-pick-row{display:flex;flex-wrap:wrap;gap:6px}
+.color-swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .13s;position:relative;flex-shrink:0}
+.color-swatch:hover{transform:scale(1.1)}
+.color-swatch.sel{border-color:var(--text-primary)!important;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text-primary)}
+.color-swatch::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;opacity:0;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.color-swatch.sel::after{opacity:1}
+
+/* vibe chips */
+.vibe-chip{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;color:var(--text-primary)}
+.vibe-chip:hover{border-color:var(--accent)}
+.vibe-chip.sel{background:var(--text-primary);color:var(--bg);border-color:var(--text-primary)}
+
+/* weather pick */
+.wx-pick-row{display:flex;gap:7px;flex-wrap:wrap}
+.wx-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .13s;font-family:'DM Sans',sans-serif;color:var(--text-primary)}
+.wx-btn:hover{border-color:var(--accent)}
+.wx-btn.a-sunny{background:var(--sunny-bg);border-color:var(--sunny-fg)}.wx-btn.a-cloudy{background:var(--cloudy-bg);border-color:var(--cloudy-fg)}.wx-btn.a-rainy{background:var(--rainy-bg);border-color:var(--rainy-fg)}.wx-btn.a-snowy{background:var(--snowy-bg);border-color:var(--snowy-fg)}
+.wx-btn-ico{font-size:19px}.wx-btn-lbl{font-size:11px;color:var(--text-secondary)}
+
+/* hashtag input */
+.htag-input-wrap{position:relative}
+.htag-input-wrap .finput{padding-right:58px;font-family:'DM Mono',monospace}
+.htag-add-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--accent);color:white;border:none;border-radius:5px;font-size:11px;padding:4px 9px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.htag-sel-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.htag-sel-pill{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--accent);background:var(--accent-light);padding:3px 8px 3px 9px;border-radius:9999px;cursor:pointer;font-family:'DM Mono',monospace}
+.htag-sel-pill span{font-size:12px;color:var(--text-muted);margin-left:1px}
+.htag-sel-pill:hover span{color:#c00}
+
+/* optional */
+.opt-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);cursor:pointer;margin-bottom:12px;user-select:none}
+.opt-toggle:hover{color:var(--text-secondary)}
+.opt-arrow{transition:transform .18s}
+.opt-toggle.open .opt-arrow{transform:rotate(90deg)}
+.opt-fields{display:none}
+.opt-fields.open{display:block}
+
+/* photo */
+.upload-zone{border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;background:var(--bg);position:relative;transition:all .14s}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-light)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.preview-wrap{border-radius:10px;position:relative;overflow:hidden;background:var(--bg)}
+.preview-wrap img{width:100%;max-height:280px;object-fit:contain;display:block;border-radius:10px;background:var(--bg)}
+.preview-remove{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+
+/* ── DETAIL ── */
+.detail-img{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:10px;display:block;margin-bottom:14px;background:var(--bg)}
+.detail-nophoto{height:160px;border-radius:10px;background:linear-gradient(135deg,#F0EFEC,#E8E6E1);display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:14px}
+.detail-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
+.detail-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-left:auto}
+.detail-htags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+.detail-note{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:13px}
+.sublabel{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
+.season-edit-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.se-chip{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
+.se-chip:hover{border-color:#aaa}
+.se-spring{background:var(--spring);color:var(--spring-text);border-color:var(--spring-text);font-weight:600}.se-summer{background:var(--summer);color:var(--summer-text);border-color:var(--summer-text);font-weight:600}.se-fall{background:var(--fall);color:var(--fall-text);border-color:var(--fall-text);font-weight:600}.se-winter{background:var(--winter);color:var(--winter-text);border-color:var(--winter-text);font-weight:600}
+.detail-colors{display:flex;align-items:center;gap:5px;margin-bottom:9px}
+.detail-color-dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
+.detail-actions{display:flex;gap:6px;align-items:center}
+.detail-worn-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .13s}
+.detail-worn-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+.detail-worn-btn.worn{background:var(--accent);color:white;border-color:var(--accent)}
+
+/* ── RANDOM / SHUFFLE ── */
+.rnd-display{text-align:center;padding:5px 0}
+.rnd-img{width:100%;height:auto;max-height:65vh;object-fit:contain;border-radius:11px;margin-bottom:0;display:block;background:var(--bg)}
+.rnd-nophoto{height:360px;border-radius:11px;background:linear-gradient(135deg,#F0EFEC,#E8E6E1);display:flex;align-items:center;justify-content:center;font-size:60px;margin-bottom:0}
+.rnd-stag{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:9999px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.rnd-card{position:relative;border-radius:11px;overflow:hidden;cursor:pointer;width:100%}
+.rnd-card:hover .rnd-card-overlay{opacity:1}
+.rnd-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.15);opacity:0;transition:opacity .2s;display:flex;align-items:center;justify-content:center;font-size:13px;color:white;font-weight:500;letter-spacing:.04em}
+.rnd-info-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 0 4px}
+.rnd-spin-btn{
+  width:100%;padding:14px;border-radius:10px;
+  background:var(--text-primary);color:white;border:none;
+  font-family:'Playfair Display',serif;font-size:16px;font-style:italic;
+  cursor:pointer;transition:all .15s;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.rnd-spin-btn:hover{opacity:.85}
+.rnd-spin-btn:active{transform:scale(.97)}
+.rnd-spin-btn.spinning{opacity:.6;pointer-events:none}
+.shuffle-strip{width:100%;height:65vw;max-height:65vh;border-radius:11px;overflow:hidden;margin-bottom:0;position:relative;background:var(--bg);transition:opacity .3s ease}
+.shuffle-film{display:flex;height:100%;transition:transform .2s cubic-bezier(.4,0,.2,1)}
+.shuffle-slide{flex-shrink:0;width:100%;height:100%;object-fit:cover;background:var(--bg)}
+.shuffle-slide-empty{flex-shrink:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:52px;background:linear-gradient(135deg,#F0EFEC,#E8E6E1)}
+.rnd-note{font-family:'Playfair Display',serif;font-style:italic;font-size:14px;color:var(--text-secondary);line-height:1.5;margin-top:7px}
+
+/* shuffle strip */
+/* shuffle CSS moved to rnd-extra block */
+
+/* ── PAYWALL ── */
+.paywall-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(8px)}
+.paywall-overlay.open{opacity:1;pointer-events:all}
+.paywall-box{background:var(--surface);border-radius:16px;width:340px;max-width:90vw;padding:26px 22px;text-align:center;transform:translateY(12px);transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.paywall-overlay.open .paywall-box{transform:translateY(0)}
+.paywall-crown{font-size:34px;margin-bottom:9px}
+.paywall-box h2{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:6px}
+.paywall-box p{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:18px}
+.paywall-actions{display:flex;flex-direction:column;gap:7px}
+.paywall-actions .prem-cta{margin-bottom:0}
+.paywall-skip{font-size:12px;color:var(--text-muted);cursor:pointer;padding:5px}
+.paywall-skip:hover{color:var(--text-secondary)}
+
+/* ── TOAST ── */
+/* ── TODAY POPUP ── */
+/* ── TODAY POPUP — vertical card ── */
+.today-popup-card{display:flex;flex-direction:column}
+.today-popup-img{
+  width:100%;max-height:55vh;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:52px;cursor:pointer;position:relative;
+  border-radius:12px 12px 0 0;
+  overflow:hidden;
+}
+.today-popup-img img{
+  width:100%;height:auto;display:block;
+  object-fit:contain;max-height:55vh;
+}
+.today-popup-img:hover .popup-img-overlay{opacity:1}
+.popup-img-overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.18);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .18s;font-size:13px;color:white;font-weight:500;
+  letter-spacing:.04em;
+}
+.today-popup-info{padding:18px 22px 22px;display:flex;flex-direction:column;gap:0}
+.popup-wx-row{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.popup-wx-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:7px;font-size:12px;font-weight:500;border:1px solid var(--border)
+}
+.popup-temp{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;color:var(--text-primary)}
+.popup-reason{font-size:16px;font-weight:500;color:var(--text-primary);line-height:1.4;margin-bottom:5px}
+.popup-sub{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px}
+.popup-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.popup-color-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid rgba(0,0,0,.1)}
+.popup-vibe{font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);background:var(--bg);padding:2px 7px;border-radius:5px;border:1px solid var(--border)}
+.popup-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.popup-worn-btn{
+  padding:11px;border-radius:9px;border:1.5px solid var(--border);
+  background:transparent;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .13s;
+  text-align:center;
+}
+.popup-worn-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+.popup-worn-btn.worn{background:var(--accent);color:white;border-color:var(--accent)}
+.popup-random-btn{
+  padding:11px;border-radius:9px;
+  background:var(--text-primary);color:white;border:none;
+  font-family:'Playfair Display',serif;font-size:14px;font-style:italic;
+  cursor:pointer;transition:all .15s;text-align:center;letter-spacing:.01em;
+}
+.popup-random-btn:hover{opacity:.85;transform:scale(.98)}
+.popup-random-btn:active{transform:scale(.95)}
+.popup-empty{padding:56px 24px;text-align:center;color:var(--text-muted);font-size:13px;font-style:italic}
+.popup-no-photo{
+  width:100%;padding:64px 20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;font-size:48px;color:var(--text-muted);
+}
+.popup-no-photo span{font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── TEMP UNIT TOGGLE ── */
+.unit-toggle{
+  display:flex;border:1px solid var(--border);border-radius:7px;
+  overflow:hidden;cursor:pointer;
+}
+.unit-option{
+  padding:5px 13px;font-size:12px;font-weight:500;
+  font-family:'DM Mono',monospace;color:var(--text-muted);
+  transition:all .15s;user-select:none;
+}
+.unit-option.active{
+  background:var(--accent);color:white;
+}
+
+/* ══════════════════════════════
+   MOBILE RESPONSIVE + DRAWER
+══════════════════════════════ */
+@media (max-width: 680px) {
+  /* hide desktop sidebar */
+  .app-body { grid-template-columns: 1fr; }
+  .sidebar   { display: none; }
+
+  /* header */
+  header { padding: 0 16px; }
+  .logo  { font-size: 18px; }
+
+  /* hamburger btn */
+  .menu-btn {
+    display: flex !important;
+    width: 36px; height: 36px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: transparent; cursor: pointer;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 4px; padding: 8px;
+  }
+  .menu-btn-bar {
+    width: 16px; height: 1.5px;
+    background: var(--text-primary); border-radius: 2px;
+    transition: all .22s;
+  }
+
+  /* panels */
+  .panel { padding: 16px; }
+  .panel-title { font-size: 22px; }
+
+  /* grid */
+  .lookbook-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* tab bar: scrollable */
+  .tab-bar { overflow-x: auto; padding: 0 16px; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+
+  /* weather strip */
+  .wx-strip { padding: 0 16px; height: 38px; gap: 6px; }
+
+
+  /* modals */
+  .modal { width: 96vw !important; max-width: 96vw; border-radius: 14px; }
+  .today-popup-img img { max-height: 55vw; }
+
+  /* random modal */
+  .modal-rnd { width: 96vw !important; }
+  .rnd-img, .rnd-nophoto { height: 58vw !important; min-height: 200px; }
+}
+
+@media (min-width: 681px) {
+  /* menu-btn always visible — drawer works on all screen sizes */
+  .drawer-overlay { /* visible when open */ }
+}
+
+/* ── DRAWER ── */
+/* drawer CSS → see compact block below */
+
+/* ══════════════════════════════
+   MOBILE RESPONSIVE + DRAWER
+══════════════════════════════ */
+@media (max-width:680px){
+  .app-body{grid-template-columns:1fr}
+  .sidebar{display:none}
+  header{padding:0 16px}
+  .logo{font-size:18px}
+  .menu-btn{width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px}
+  .menu-btn-bar{width:16px;height:1.5px;background:var(--text-primary);border-radius:2px;transition:all .22s}
+  .panel{padding:16px}
+  .panel-title{font-size:22px}
+  .lookbook-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .tab-bar{overflow-x:auto;padding:0 16px}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab{padding:10px 12px;font-size:12px;white-space:nowrap}
+  .wx-strip{padding:0 16px;height:38px;gap:6px}
+
+  .modal{width:96vw!important;max-width:96vw;border-radius:14px}
+  .modal-rnd{width:96vw!important}
+  .rnd-img,.rnd-nophoto{height:260px!important}
+  .today-popup-img img{max-height:60vw}
+  .hero-right{padding:14px 16px}
+}
+@media (min-width:681px){
+  /* drawer always available */
+}
+.menu-btn{display:flex}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:500;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px)}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:260px;background:var(--surface);z-index:501;transform:translateX(100%);transition:transform .28s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;overflow-y:auto;padding:20px 16px 28px;box-shadow:-6px 0 32px rgba(0,0,0,.15)}
+.drawer.open{transform:translateX(0)}
+.drawer-logo{font-family:'Playfair Display',serif;font-size:20px;letter-spacing:.1em;margin-bottom:24px;display:block}
+.drawer-logo em{font-style:italic;font-weight:400}
+.drawer-section-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:0 8px;margin-bottom:4px;margin-top:16px}
+.drawer-btn{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;cursor:pointer;border:none;background:transparent;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-secondary);transition:all .13s;width:100%;margin-bottom:2px}
+.drawer-btn:hover{background:var(--accent-light);color:var(--text-primary)}
+.drawer-btn.active{background:var(--accent-light);color:var(--accent);font-weight:500}
+.drawer-btn.wx-sunny{background:var(--sunny-bg);color:var(--sunny-fg);font-weight:500}
+.drawer-btn.wx-cloudy{background:var(--cloudy-bg);color:var(--cloudy-fg);font-weight:500}
+.drawer-btn.wx-rainy{background:var(--rainy-bg);color:var(--rainy-fg);font-weight:500}
+.drawer-btn.wx-snowy{background:var(--snowy-bg);color:var(--snowy-fg);font-weight:500}
+.drawer-s-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.drawer-fcnt{margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted)}
+.drawer-divider{height:1px;background:var(--border);margin:8px 0}
+.drawer-spin-btn{width:100%;padding:12px;border-radius:10px;background:var(--accent);color:white;border:none;font-family:'Playfair Display',serif;font-size:14px;font-style:italic;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:auto}
+.drawer-spin-btn:hover{opacity:.85}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--accent);color:white;padding:9px 20px;border-radius:7px;font-size:13px;opacity:0;transition:all .24s;z-index:400;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:99px}
+
+/* ── NEW THEMES — full variable sets ── */
+body[data-theme='lux']{
+  --bg:#FAF8F2;--surface:#FFFCF5;--border:rgba(0,0,0,.08);
+  --text-primary:#2A1F00;--text-secondary:#7A6830;--text-muted:#B8A870;
+  --accent:#C9A84C;--accent-light:#FAF6EC;
+  --spring:#FBF0D8;--spring-text:#7A5800;
+  --summer:#F8EAC8;--summer-text:#8B6000;
+  --fall:#F5E4C0;--fall-text:#7A4E00;
+  --winter:#F2ECD8;--winter-text:#5A4A20;
+  --sunny-bg:#FBF3DB;--sunny-fg:#956400;
+  --cloudy-bg:#EDE8D8;--cloudy-fg:#6A5820;
+  --rainy-bg:#EAE4F0;--rainy-fg:#5A4080;
+  --snowy-bg:#F0EAF8;--snowy-fg:#6040A0;
+}
+body[data-theme='rose']{
+  --bg:#FDF5F7;--surface:#FFFAFC;--border:rgba(0,0,0,.07);
+  --text-primary:#2A0A14;--text-secondary:#784050;--text-muted:#B88098;
+  --accent:#B5476A;--accent-light:#FDF0F4;
+  --spring:#FDE8EF;--spring-text:#A03060;
+  --summer:#FCE0EA;--summer-text:#B5476A;
+  --fall:#F9E0EC;--fall-text:#8B2560;
+  --winter:#EEE0F8;--winter-text:#6B3090;
+  --sunny-bg:#FBF3DB;--sunny-fg:#956400;
+  --cloudy-bg:#EAEAEA;--cloudy-fg:#555;
+  --rainy-bg:#E1F3FE;--rainy-fg:#1F6C9F;
+  --snowy-bg:#F0EFFE;--snowy-fg:#5B4FBE;
+}
+body[data-theme='sage']{
+  --bg:#F3F8F5;--surface:#F9FCF9;--border:rgba(0,0,0,.07);
+  --text-primary:#0A2018;--text-secondary:#3A6048;--text-muted:#80A888;
+  --accent:#4A7C6F;--accent-light:#EEF5F3;
+  --spring:#E8F5F0;--spring-text:#2D6B5A;
+  --summer:#DFF5E8;--summer-text:#2A7A4A;
+  --fall:#EFF5E0;--fall-text:#4A6A2A;
+  --winter:#E0EFF5;--winter-text:#2A506A;
+  --sunny-bg:#FBF3DB;--sunny-fg:#956400;
+  --cloudy-bg:#EAEAEA;--cloudy-fg:#555;
+  --rainy-bg:#E1F3FE;--rainy-fg:#1F6C9F;
+  --snowy-bg:#F0EFFE;--snowy-fg:#5B4FBE;
+}
+body[data-theme='slate']{
+  --bg:#F2F5F9;--surface:#F8FAFC;--border:rgba(0,0,0,.08);
+  --text-primary:#0A1828;--text-secondary:#3A5070;--text-muted:#7090A8;
+  --accent:#3D5A80;--accent-light:#EBF0F8;
+  --spring:#E8EFF8;--spring-text:#2A4A70;
+  --summer:#E0EAF8;--summer-text:#1A3A6A;
+  --fall:#E8ECF5;--fall-text:#2A3A60;
+  --winter:#EAE8F8;--winter-text:#3A2A70;
+  --sunny-bg:#FBF3DB;--sunny-fg:#956400;
+  --cloudy-bg:#EAEAEA;--cloudy-fg:#555;
+  --rainy-bg:#E1F3FE;--rainy-fg:#1F6C9F;
+  --snowy-bg:#F0EFFE;--snowy-fg:#5B4FBE;
+}
+body[data-theme='sand']{
+  --bg:#FAF6EE;--surface:#FFFDF8;--border:rgba(0,0,0,.08);
+  --text-primary:#1A1200;--text-secondary:#6A5020;--text-muted:#A89060;
+  --accent:#8B6914;--accent-light:#FBF4E0;
+  --spring:#FBF0D8;--spring-text:#7A5800;
+  --summer:#F8EAC8;--summer-text:#8B6000;
+  --fall:#F5E4C0;--fall-text:#7A4E00;
+  --winter:#EEE8D8;--winter-text:#5A4A20;
+  --sunny-bg:#FBF3DB;--sunny-fg:#956400;
+  --cloudy-bg:#EDE8D8;--cloudy-fg:#6A5820;
+  --rainy-bg:#E1F3FE;--rainy-fg:#1F6C9F;
+  --snowy-bg:#F0EFFE;--snowy-fg:#5B4FBE;
+}
+body[data-theme='noir']{
+  --bg:#111111;--surface:#1A1A1A;--border:rgba(255,255,255,.1);
+  --text-primary:#E8E6E1;--text-secondary:#9E9A94;--text-muted:#5A5652;
+  --accent:#C8C4BC;--accent-light:#222222;
+  --spring:#2A2A2A;--spring-text:#C8C4BC;
+  --summer:#252525;--summer-text:#B8C4D0;
+  --fall:#2A2520;--fall-text:#C8B898;
+  --winter:#202028;--winter-text:#B0B8D0;
+  --sunny-bg:#2A2510;--sunny-fg:#C8A840;
+  --cloudy-bg:#252525;--cloudy-fg:#9E9A94;
+  --rainy-bg:#151C25;--rainy-fg:#6090B8;
+  --snowy-bg:#181820;--snowy-fg:#8080C0;
+}
+
+
+
+.popup-info-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:500;letter-spacing:.03em}
+
+#today-popup .modal{max-height:none;overflow:hidden}
+#today-popup .modal-body{overflow:hidden;padding:0}
+
+.card-season-overlay{position:absolute;bottom:8px;left:8px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:8px;opacity:.88;pointer-events:none}
+
+/* ── STATS ── */
+.stats-period-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--bg);padding:3px;border-radius:10px;border:1px solid var(--border)}
+.stats-period-btn{flex:1;padding:7px 0;border:none;background:transparent;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s}
+.stats-period-btn.active{background:var(--surface);color:var(--text-primary);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+.stat-section{margin-bottom:22px}
+.stat-section-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+
+.stat-dna-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-dna-label{font-family:'Playfair Display',serif;font-size:18px;font-style:italic;color:var(--text-primary);margin-bottom:12px}
+.stat-dna-bars{display:flex;flex-direction:column;gap:8px}
+.stat-dna-row{display:flex;align-items:center;gap:8px}
+.stat-dna-name{font-size:12px;color:var(--text-secondary);width:68px;flex-shrink:0}
+.stat-dna-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:9999px;overflow:hidden}
+.stat-dna-bar{height:100%;border-radius:9999px;background:var(--accent);transition:width .5s ease}
+.stat-dna-pct{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted);width:32px;text-align:right;flex-shrink:0}
+
+.stat-color-dots{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.stat-color-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.12);position:relative}
+.stat-color-dot-label{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--text-muted);white-space:nowrap}
+
+.stat-love-card{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;transition:all .13s}
+.stat-love-card:hover{border-color:var(--accent)}
+.stat-love-thumb{width:56px;height:72px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--bg)}
+.stat-love-thumb-empty{width:56px;height:72px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-love-info{flex:1;min-width:0}
+.stat-love-title{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px}
+.stat-love-sub{font-size:11px;color:var(--text-muted)}
+
+.stat-mood-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.stat-mood-chip{flex-shrink:0;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);text-align:center}
+.stat-mood-season{font-size:16px;margin-bottom:2px}
+.stat-mood-name{font-size:10px;color:var(--text-muted);margin-bottom:4px}
+.stat-mood-vibe{font-size:11px;font-weight:500;color:var(--text-primary)}
+
+.stat-number-row{display:flex;gap:10px}
+.stat-number-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-number-value{font-family:'Playfair Display',serif;font-size:28px;color:var(--text-primary);line-height:1}
+.stat-number-label{font-size:10px;color:var(--text-muted);margin-top:4px}
+
+.stat-wx-type{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.stat-wx-emoji{font-size:28px;flex-shrink:0}
+.stat-wx-title{font-size:14px;font-weight:500;color:var(--text-primary)}
+.stat-wx-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.stat-streak{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.stat-streak-num{font-family:'Playfair Display',serif;font-size:32px;color:var(--accent);flex-shrink:0;line-height:1}
+.stat-streak-label{font-size:13px;font-weight:500;color:var(--text-primary)}
+.stat-streak-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.stat-empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;font-style:italic}
+.stat-htag-row{display:flex;gap:6px;flex-wrap:wrap}
+.stat-htag-pill{padding:4px 10px;border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:500}
+</style>
+</head>
+<body data-theme="default">
+
+<!-- ONBOARDING -->
+<div class="onboard-screen" id="onboard-screen">
+  <div class="onboard-box">
+    <!-- Step 1: Language -->
+    <div class="onboard-step active" id="ob-step-1">
+      <div class="onboard-logo">Closette</div>
+      <p class="onboard-sub" id="ob-step1-sub">Record your outfits, get daily recommendations.<br>Select your language to get started.</p>
+      <div class="onboard-progress"><div class="progress-dot done"></div><div class="progress-dot"></div><div class="progress-dot"></div></div>
+      <span class="onboard-label" id="ob-lang-label">언어 / Language</span>
+      <div class="lang-grid">
+        <button class="lang-btn" data-lang="ko" onclick="pickLang(this)"><span class="lang-flag">🇰🇷</span>한국어</button>
+        <button class="lang-btn sel" data-lang="en" onclick="pickLang(this)"><span class="lang-flag">🇺🇸</span>English</button>
+        <button class="lang-btn" data-lang="ja" onclick="pickLang(this)"><span class="lang-flag">🇯🇵</span>日本語</button>
+        <button class="lang-btn" data-lang="zh" onclick="pickLang(this)"><span class="lang-flag">🇨🇳</span>中文</button>
+      </div>
+      <button class="onboard-next" onclick="obNext(2)">Next →</button>
+    </div>
+
+    <!-- Step 2: City -->
+    <div class="onboard-step" id="ob-step-2">
+      <div class="onboard-logo">Closette</div>
+      <p class="onboard-sub" id="ob-step2-sub">Select your country and city for weather-based recommendations.</p>
+      <div class="onboard-progress"><div class="progress-dot done"></div><div class="progress-dot done"></div><div class="progress-dot"></div></div>
+      <span class="onboard-label" id="ob-country-label">Country</span>
+      <select class="onboard-input" id="ob-country-select" onchange="onObCountryChange()" style="margin-bottom:14px;cursor:pointer">
+        <option value="" id="ob-country-placeholder">-- Select a country --</option>
+        <option value="South Korea">🇰🇷 South Korea</option>
+        <option value="USA">🇺🇸 USA</option>
+        <option value="Japan">🇯🇵 Japan</option>
+        <option value="China">🇨🇳 China</option>
+        <option value="UK">🇬🇧 UK</option>
+        <option value="France">🇫🇷 France</option>
+        <option value="Germany">🇩🇪 Germany</option>
+        <option value="Australia">🇦🇺 Australia</option>
+        <option value="Canada">🇨🇦 Canada</option>
+        <option value="Austria">🇦🇹 Austria</option>
+        <option value="Brazil">🇧🇷 Brazil</option>
+        <option value="Czech Rep.">🇨🇿 Czech Rep.</option>
+        <option value="Denmark">🇩🇰 Denmark</option>
+        <option value="Egypt">🇪🇬 Egypt</option>
+        <option value="India">🇮🇳 India</option>
+        <option value="Indonesia">🇮🇩 Indonesia</option>
+        <option value="Italy">🇮🇹 Italy</option>
+        <option value="Malaysia">🇲🇾 Malaysia</option>
+        <option value="Mexico">🇲🇽 Mexico</option>
+        <option value="Netherlands">🇳🇱 Netherlands</option>
+        <option value="Philippines">🇵🇭 Philippines</option>
+        <option value="Poland">🇵🇱 Poland</option>
+        <option value="Russia">🇷🇺 Russia</option>
+        <option value="Singapore">🇸🇬 Singapore</option>
+        <option value="Spain">🇪🇸 Spain</option>
+        <option value="Sweden">🇸🇪 Sweden</option>
+        <option value="Switzerland">🇨🇭 Switzerland</option>
+        <option value="Thailand">🇹🇭 Thailand</option>
+        <option value="Turkey">🇹🇷 Turkey</option>
+        <option value="UAE">🇦🇪 UAE</option>
+        <option value="Vietnam">🇻🇳 Vietnam</option>
+      </select>
+      <span class="onboard-label" id="ob-city-label" style="display:none">City</span>
+      <select class="onboard-input" id="ob-city-select" onchange="onObCityChange()" style="display:none;cursor:pointer">
+        <option value="" id="ob-city-placeholder">-- Select a city --</option>
+      </select>
+      <div id="city-confirmed" style="display:none;background:var(--accent-light);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-top:10px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:500" id="city-confirmed-name"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px" id="city-confirmed-coords"></div>
+      </div>
+      <button class="onboard-next" onclick="obNext(3)">Next →</button>
+    </div>
+
+    <!-- Step 3: Done -->
+    <div class="onboard-step" id="ob-step-3">
+      <div class="onboard-logo">Closette</div>
+      <p class="onboard-sub">설정 완료! 이제 오늘의 착장을 기록하고<br>날씨에 맞는 추천을 받아보세요.</p>
+      <div class="onboard-progress"><div class="progress-dot done"></div><div class="progress-dot done"></div><div class="progress-dot done"></div></div>
+      <div style="padding:20px;background:var(--accent-light);border-radius:10px;margin-bottom:24px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px" id="ob-done-city-icon">📍</div>
+        <div style="font-size:14px;font-weight:500" id="ob-done-city">서울, 대한민국</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px" id="ob-done-lang">언어: 한국어</div>
+      </div>
+      <button class="onboard-next" onclick="finishOnboard()">Get Started</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until onboard done) -->
+<div id="main-app" style="display:none">
+
+<header>
+  <div class="logo" onclick="goHome()" style="cursor:pointer">Closette</div>
+  <div class="header-right">
+    <button class="btn btn-outline" id="today-btn" onclick="openTodayPopup()" title="오늘의 추천 착장" style="padding:8px 11px;font-size:15px;line-height:1">✦</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ <span data-i="add">추가</span></button>
+    <button class="menu-btn" onclick="openDrawer()" aria-label="메뉴">
+      <div class="menu-btn-bar"></div>
+      <div class="menu-btn-bar"></div>
+      <div class="menu-btn-bar"></div>
+    </button>
+  </div>
+</header>
+
+<!-- TODAY HERO -->
+<!-- WEATHER STRIP -->
+<div class="wx-strip" id="wx-strip">
+  <div class="wx-strip-loading" id="wx-strip-loading">
+    <div class="wx-dot"></div><div class="wx-dot"></div><div class="wx-dot"></div>
+    <span style="margin-left:3px;font-size:11px;color:var(--text-muted)">날씨 확인 중…</span>
+  </div>
+  <div id="wx-strip-loaded" style="display:none;width:100%;align-items:center;gap:10px">
+    <span class="wx-strip-temp" id="ws-temp"></span>
+    <span class="wx-strip-chip" id="ws-chip"></span>
+    <span class="wx-strip-desc" id="ws-desc"></span>
+    <div class="wx-strip-right">
+      <span class="wx-strip-city" id="ws-city"></span>
+      <button class="wx-strip-refresh" onclick="fetchWeather()">Refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab active" id="tab-looks"   onclick="openTab('looks')"  ><span data-i="looks">착장</span></button>
+  <button class="tab"        id="tab-stats"   onclick="openTabWithLock('stats')"  ><span data-i="stats">통계</span></button>
+</div>
+
+<div class="app-body">
+  <aside class="sidebar">
+    <div class="sidebar-label" data-i="season">계절</div>
+    <button class="filter-btn active" id="sb-spring" onclick="sidebarSeasonFilter(this,'spring')"><span class="s-dot d-spring"></span><span data-i="spring">봄</span><span class="fcnt" id="cnt-spring">0</span></button>
+    <button class="filter-btn" id="sb-summer" onclick="sidebarSeasonFilter(this,'summer')"><span class="s-dot d-summer"></span><span data-i="summer">여름</span><span class="fcnt" id="cnt-summer">0</span></button>
+    <button class="filter-btn" id="sb-fall"   onclick="sidebarSeasonFilter(this,'fall')"><span class="s-dot d-fall"></span><span data-i="fall">가을</span><span class="fcnt" id="cnt-fall">0</span></button>
+    <button class="filter-btn" id="sb-winter" onclick="sidebarSeasonFilter(this,'winter')"><span class="s-dot d-winter"></span><span data-i="winter">겨울</span><span class="fcnt" id="cnt-winter">0</span></button>
+    <div class="s-div"></div>
+    <div class="sidebar-label" data-i="weather">날씨</div>
+    <button class="filter-btn" id="fb-all" onclick="setWxFilter(this,'all')"><span class="wico">🌈</span><span data-i="all">전체</span><span class="fcnt" id="cnt-wx-all">0</span></button>
+    <button class="filter-btn" id="fb-sunny"  onclick="setWxFilter(this,'sunny')"><span class="wico">☀️</span><span data-i="sunny">화창</span><span class="fcnt" id="cnt-sunny">0</span></button>
+    <button class="filter-btn" id="fb-cloudy" onclick="setWxFilter(this,'cloudy')"><span class="wico">☁️</span><span data-i="cloudy">흐림</span><span class="fcnt" id="cnt-cloudy">0</span></button>
+    <button class="filter-btn" id="fb-rainy"  onclick="setWxFilter(this,'rainy')"><span class="wico">🌧️</span><span data-i="rainy">비</span><span class="fcnt" id="cnt-rainy">0</span></button>
+    <button class="filter-btn" id="fb-snowy"  onclick="setWxFilter(this,'snowy')"><span class="wico">❄️</span><span data-i="snowy">눈</span><span class="fcnt" id="cnt-snowy">0</span></button>
+  </aside>
+
+  <div class="panels">
+
+    <!-- LOOKS -->
+    <div class="panel active" id="panel-looks">
+      <div class="panel-header">
+        <h1 class="panel-title" id="page-title">All <em>Looks</em></h1>
+        <span class="rcnt" id="result-count">0 outfits</span>
+      </div>
+      <div class="lookbook-grid" id="grid"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="panel" id="panel-stats">
+      <div class="panel-header">
+        <h1 class="panel-title"><em>Stats</em></h1>
+      </div>
+
+      <!-- Stats content -->
+      <div id="stats-content"></div>
+
+    
+    <!-- PREMIUM / LUX -->
+    <div class="panel" id="panel-premium">
+      <div class="panel-header">
+        <h1 class="panel-title">✦ <em>Lux</em></h1>
+      </div>
+      <div class="premium-hero" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-color:rgba(201,168,76,.3)">
+        <div style="font-size:28px;margin-bottom:6px;letter-spacing:.2em;color:#C9A84C">✦ LUX</div>
+        <h2 style="color:#F5F0E8;font-size:20px;margin-bottom:6px">Closette Lux</h2>
+        <p style="color:#A89878;font-size:13px;line-height:1.6">확장 테마, 무제한 저장, 아침 알림까지<br>스타일 관리의 모든 것</p>
+      </div>
+      <button class="prem-cta" onclick="openPaywall('Lux 전체')" style="background:linear-gradient(135deg,#C9A84C,#E8C96A);margin-top:20px">✦ Lux 월 ₩3,900으로 시작하기</button>
+      <p class="prem-subtext">연간 결제 시 ₩29,900 · 언제든 취소 가능</p>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div class="panel-header"><h1 class="panel-title"><em data-i="settings_title">설정</em></h1></div>
+      <div class="settings-section">
+        <div class="settings-section-title" data-i="region_lang">지역 & 언어</div>
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div><div class="settings-row-label" data-i="city">도시</div><div class="settings-row-sub" id="settings-city-sub">—</div></div>
+          <select class="settings-select" id="settings-country-select" onchange="onSettingsCountryChange()" style="width:100%;padding:9px 12px;font-size:13px">
+            <option value="" id="settings-country-placeholder">-- Select country --</option>
+            <option value="South Korea">🇰🇷 South Korea</option>
+        <option value="USA">🇺🇸 USA</option>
+        <option value="Japan">🇯🇵 Japan</option>
+        <option value="China">🇨🇳 China</option>
+        <option value="UK">🇬🇧 UK</option>
+        <option value="France">🇫🇷 France</option>
+        <option value="Germany">🇩🇪 Germany</option>
+        <option value="Australia">🇦🇺 Australia</option>
+        <option value="Canada">🇨🇦 Canada</option>
+        <option value="Austria">🇦🇹 Austria</option>
+        <option value="Brazil">🇧🇷 Brazil</option>
+        <option value="Czech Rep.">🇨🇿 Czech Rep.</option>
+        <option value="Denmark">🇩🇰 Denmark</option>
+        <option value="Egypt">🇪🇬 Egypt</option>
+        <option value="India">🇮🇳 India</option>
+        <option value="Indonesia">🇮🇩 Indonesia</option>
+        <option value="Italy">🇮🇹 Italy</option>
+        <option value="Malaysia">🇲🇾 Malaysia</option>
+        <option value="Mexico">🇲🇽 Mexico</option>
+        <option value="Netherlands">🇳🇱 Netherlands</option>
+        <option value="Philippines">🇵🇭 Philippines</option>
+        <option value="Poland">🇵🇱 Poland</option>
+        <option value="Russia">🇷🇺 Russia</option>
+        <option value="Singapore">🇸🇬 Singapore</option>
+        <option value="Spain">🇪🇸 Spain</option>
+        <option value="Sweden">🇸🇪 Sweden</option>
+        <option value="Switzerland">🇨🇭 Switzerland</option>
+        <option value="Thailand">🇹🇭 Thailand</option>
+        <option value="Turkey">🇹🇷 Turkey</option>
+        <option value="UAE">🇦🇪 UAE</option>
+        <option value="Vietnam">🇻🇳 Vietnam</option>
+          </select>
+          <select class="settings-select" id="settings-city-select" onchange="onSettingsCityChange()" style="width:100%;padding:9px 12px;font-size:13px;display:none">
+            <option value="" id="settings-city-placeholder">-- Select city --</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label" data-i="language">언어</div><div class="settings-row-sub" id="settings-lang-sub">한국어</div></div>
+          <div class="settings-row-right">
+            <select class="settings-select" id="lang-select" onchange="changeLang(this.value)">
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title" data-i="appearance">테마</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label" data-i="theme">컬러 테마</div><div class="settings-row-sub" data-i="theme_sub">앱 전체 색상을 변경해요</div></div>
+          <div class="settings-row-right">
+            <select class="settings-select" id="theme-select" onchange="applyThemeSelect(this.value)">
+              <option value="default">Default</option>
+              <option value="bloom">Bloom</option>
+              <option value="earth">Earth</option>
+              <option value="mono">Mono</option>
+              <option value="rose">Rose</option>
+              <option value="sage">Sage</option>
+              <option value="slate">Slate</option>
+              <option value="sand">Sand</option>
+              <option value="noir">Noir</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Temperature Unit</div>
+            <div class="settings-row-sub" id="temp-unit-sub">Currently: Celsius (°C)</div>
+          </div>
+          <div class="settings-row-right">
+            <div class="unit-toggle" id="unit-toggle" onclick="toggleTempUnit()">
+              <div class="unit-option" id="unit-c">°C</div>
+              <div class="unit-option" id="unit-f">°F</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">알림</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">아침 착장 알림</div>
+            <div class="settings-row-sub" id="settings-notif-sub">꺼짐</div>
+          </div>
+          <div class="settings-row-right" style="gap:12px">
+            <input type="time" id="settings-notif-time" value="08:00"
+              style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-primary);font-family:'DM Mono',monospace"
+              onchange="saveNotifTime(this.value)">
+            <div class="toggle-track" id="settings-notif-toggle" onclick="toggleNotifSettings(this)"><div class="toggle-thumb"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title" data-i="data">데이터</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label" data-i="total_looks">저장된 착장</div><div class="settings-row-sub" id="settings-count-sub">0개</div></div>
+          <div class="settings-row-right"><button class="btn btn-outline" style="color:#9F2F2D;border-color:#FDEBEC" onclick="clearAll()" data-i="delete_all">전체 삭제</button></div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label" data-i="reset_onboard">온보딩 다시 보기</div></div>
+          <div class="settings-row-right"><button class="btn btn-outline" onclick="resetOnboard()" data-i="reset">초기화</button></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">법적 고지</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">개인정보 처리방침</div><div class="settings-row-sub">Privacy Policy</div></div>
+          <div class="settings-row-right"><button class="btn btn-outline" onclick="openPrivacyModal()">보기</button></div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">앱 정보</div><div class="settings-row-sub">Closette v1.0</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+</div><!-- /app-body -->
+
+<!-- ADD MODAL -->
+<div class="overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-head"><h2 class="modal-title" data-i="add_look">새 착장 추가</h2><button class="mclose" onclick="closeModal('add-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="fg">
+        <label class="flabel" data-i="photo">사진</label>
+        <div class="upload-zone" id="upload-zone"><input type="file" accept="image/*" id="photo-input" onchange="handlePhoto(event)"><div style="font-size:22px">📷</div><p data-i="upload_photo">클릭하여 사진 업로드</p></div>
+        <div class="preview-wrap" id="preview-wrap" style="display:none"><img id="preview-img" src="" alt=""><button class="preview-remove" onclick="removePhoto()">×</button></div>
+      </div>
+
+      <!-- WEATHER -->
+      <div class="fg">
+        <label class="flabel"><span data-i="weather">날씨</span> <span class="flabel-note" data-i="required">(필수)</span></label>
+        <div class="wx-pick-row" id="add-wx">
+          <button class="wx-btn" data-wx="sunny"  onclick="pickWx(this)"><span class="wx-btn-ico">☀️</span><span class="wx-btn-lbl" data-i="sunny">화창</span></button>
+          <button class="wx-btn" data-wx="cloudy" onclick="pickWx(this)"><span class="wx-btn-ico">☁️</span><span class="wx-btn-lbl" data-i="cloudy">흐림</span></button>
+          <button class="wx-btn" data-wx="rainy"  onclick="pickWx(this)"><span class="wx-btn-ico">🌧️</span><span class="wx-btn-lbl" data-i="rainy">비</span></button>
+          <button class="wx-btn" data-wx="snowy"  onclick="pickWx(this)"><span class="wx-btn-ico">❄️</span><span class="wx-btn-lbl" data-i="snowy">눈</span></button>
+        </div>
+      </div>
+
+      <!-- SEASON -->
+      <div class="fg">
+        <label class="flabel"><span data-i="season">계절</span> <span class="flabel-note" data-i="required">(필수)</span></label>
+        <div class="chip-row" id="season-chips">
+          <button class="chip chip-spring" onclick="pickChip(this,'season')">🌸 <span data-i="spring">봄</span></button>
+          <button class="chip chip-summer" onclick="pickChip(this,'season')">☀️ <span data-i="summer">여름</span></button>
+          <button class="chip chip-fall"   onclick="pickChip(this,'season')">🍂 <span data-i="fall">가을</span></button>
+          <button class="chip chip-winter" onclick="pickChip(this,'season')">❄️ <span data-i="winter">겨울</span></button>
+        </div>
+      </div>
+
+      <!-- MAIN COLORS -->
+      <div class="fg">
+        <label class="flabel"><span data-i="main_colors">메인 컬러</span> <span class="flabel-note" data-i="pick_3">최대 3개</span></label>
+        <div class="color-pick-row" id="color-picker"></div>
+      </div>
+
+      <!-- STYLE VIBE -->
+      <div class="fg">
+        <label class="flabel"><span data-i="style_vibe">스타일 바이브</span> <span class="flabel-note" data-i="pick_2">1–2개 선택</span></label>
+        <div class="chip-row" id="vibe-picker"></div>
+      </div>
+
+      <!-- HASHTAGS -->
+      <div class="fg">
+        <label class="flabel"># <span data-i="hashtag">해시태그</span></label>
+        <div class="htag-input-wrap"><input class="finput" id="htag-input" type="text" style="font-family:'DM Mono',monospace" onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addHtag();}"><button class="htag-add-btn" onclick="addHtag()" data-i="add_tag">추가</button></div>
+        <div class="htag-sel-row" id="htag-sel-row"></div>
+      </div>
+
+      <!-- OPTIONAL -->
+      <div class="opt-toggle" id="opt-toggle" onclick="toggleOpt()"><span class="opt-arrow">▶</span><span data-i="date_memo">날짜 / 메모 추가 (선택)</span></div>
+      <div class="opt-fields" id="opt-fields">
+        <div class="fg"><label class="flabel" data-i="date">날짜</label><input class="finput" type="date" id="look-date"></div>
+        <div class="fg"><label class="flabel" data-i="memo">메모</label><textarea class="ftextarea" id="look-note"></textarea></div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:11px;margin-top:4px" onclick="saveLook()" data-i="save">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- RANDOM MODAL -->
+<div class="overlay" id="random-modal">
+  <div class="modal modal-rnd">
+    <div class="modal-head">
+      <h2 class="modal-title">✦ <span data-i="random">랜덤 뽑기</span></h2>
+      <button class="mclose" onclick="closeModal('random-modal')">×</button>
+    </div>
+    <div class="modal-body" style="padding-top:14px">
+      <!-- season filter chips — single row scroll -->
+      <div id="rnd-chips" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+        <button class="chip sel" onclick="pickChip(this,'rnd')" style="border-radius:8px;white-space:nowrap;flex-shrink:0">🌿 <span data-i="all">전체</span></button>
+        <button class="chip chip-spring" onclick="pickChip(this,'rnd')" style="border-radius:8px;white-space:nowrap;flex-shrink:0">🌸 <span data-i="spring">봄</span></button>
+        <button class="chip chip-summer" onclick="pickChip(this,'rnd')" style="border-radius:8px;white-space:nowrap;flex-shrink:0">☀️ <span data-i="summer">여름</span></button>
+        <button class="chip chip-fall"   onclick="pickChip(this,'rnd')" style="border-radius:8px;white-space:nowrap;flex-shrink:0">🍂 <span data-i="fall">가을</span></button>
+        <button class="chip chip-winter" onclick="pickChip(this,'rnd')" style="border-radius:8px;white-space:nowrap;flex-shrink:0">❄️ <span data-i="winter">겨울</span></button>
+      </div>
+      <!-- shuffle animation strip -->
+      <div class="shuffle-strip" id="shuffle-strip" style="display:none">
+        <div class="shuffle-film" id="shuffle-film"></div>
+      </div>
+      <!-- final result -->
+      <div id="rnd-display" class="rnd-display"></div>
+      <!-- spin button -->
+      <button class="rnd-spin-btn" id="rnd-spin-btn" onclick="spinRandom()" style="margin-top:14px">
+        🎲 <span data-i="spin_again">다시 뽑기</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detail-modal">
+  <div class="modal"><div class="modal-head"><h2 class="modal-title" data-i="detail">착장 상세</h2><button class="mclose" onclick="closeModal('detail-modal')">×</button></div><div class="modal-body" id="detail-body"></div></div>
+</div>
+
+<!-- WEATHER PICKER MODAL -->
+<div class="overlay" id="wx-modal">
+  <div class="modal modal-sm">
+    <div class="modal-head"><h2 class="modal-title" data-i="today_weather">오늘 날씨</h2><button class="mclose" onclick="closeModal('wx-modal')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px" data-i="wx_desc">날씨를 선택하면 맞는 착장을 추천해드려요.</p>
+      <div class="wx-pick-row">
+        <button class="wx-btn" onclick="setTodayWx('sunny')"><span class="wx-btn-ico">☀️</span><span class="wx-btn-lbl" data-i="sunny">화창</span></button>
+        <button class="wx-btn" onclick="setTodayWx('cloudy')"><span class="wx-btn-ico">☁️</span><span class="wx-btn-lbl" data-i="cloudy">흐림</span></button>
+        <button class="wx-btn" onclick="setTodayWx('rainy')"><span class="wx-btn-ico">🌧️</span><span class="wx-btn-lbl" data-i="rainy">비</span></button>
+        <button class="wx-btn" onclick="setTodayWx('snowy')"><span class="wx-btn-ico">❄️</span><span class="wx-btn-lbl" data-i="snowy">눈</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYWALL -->
+<!-- TODAY POPUP MODAL -->
+<div class="overlay" id="today-popup">
+  <div class="modal" style="width:500px;max-width:94vw">
+    <div class="modal-head">
+      <h2 class="modal-title" id="today-popup-title">✦ 오늘의 착장</h2>
+      <button class="mclose" onclick="closeModal('today-popup')">×</button>
+    </div>
+    <div class="modal-body" id="today-popup-body" style="padding:0;overflow:hidden"></div>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY MODAL -->
+<div class="overlay" id="privacy-modal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <h2 class="modal-title" id="privacy-modal-title">Privacy Policy</h2>
+      <button class="mclose" onclick="closeModal('privacy-modal')">×</button>
+    </div>
+    <div class="modal-body" id="privacy-modal-body" style="font-size:13px;line-height:1.8;color:var(--text-secondary)"></div>
+  </div>
+</div>
+
+<div class="paywall-overlay" id="paywall">
+  <div class="paywall-box">
+    <div class="paywall-crown">★</div>
+    <h2 data-i="pro_feature">Lux 기능이에요</h2>
+    <p id="paywall-desc">이 기능은 Closette Lux에서 사용할 수 있어요.</p>
+    <div class="paywall-actions">
+      <button class="prem-cta" onclick="demoPurchase()">월 ₩3,900으로 시작하기</button>
+      <span class="paywall-skip" onclick="closePaywall()" data-i="later">나중에 할게요</span>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <span style="font-family:'Playfair Display',serif;font-size:18px;letter-spacing:.1em;cursor:pointer" onclick="goHome()">Closette</span>
+    <button onclick="closeDrawer()" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex-shrink:0">×</button>
+  </div>
+
+  <div class="drawer-label" data-i="season">계절</div>
+  <button class="drawer-btn active" id="drw-spring" onclick="drawerSeasonFilter('spring')"><span class="drawer-s-dot" style="background:var(--spring-text)"></span><span data-i="spring">봄</span><span class="drawer-fcnt" id="drw-cnt-spring">0</span></button>
+  <button class="drawer-btn" id="drw-summer" onclick="drawerSeasonFilter('summer')"><span class="drawer-s-dot" style="background:var(--summer-text)"></span><span data-i="summer">여름</span><span class="drawer-fcnt" id="drw-cnt-summer">0</span></button>
+  <button class="drawer-btn" id="drw-fall"   onclick="drawerSeasonFilter('fall')">  <span class="drawer-s-dot" style="background:var(--fall-text)"></span><span data-i="fall">가을</span><span class="drawer-fcnt" id="drw-cnt-fall">0</span></button>
+  <button class="drawer-btn" id="drw-winter" onclick="drawerSeasonFilter('winter')"><span class="drawer-s-dot" style="background:var(--winter-text)"></span><span data-i="winter">겨울</span><span class="drawer-fcnt" id="drw-cnt-winter">0</span></button>
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-label" data-i="weather">날씨</div>
+  <button class="drawer-btn" id="drw-wx-all" onclick="drawerWxFilter('all')"><span style="font-size:13px">🌈</span><span data-i="all">전체</span><span class="drawer-fcnt" id="drw-cnt-wx-all">0</span></button>
+  <button class="drawer-btn" id="drw-sunny"  onclick="drawerWxFilter('sunny')">  <span style="font-size:13px">☀️</span><span data-i="sunny">화창</span><span class="drawer-fcnt" id="drw-cnt-sunny">0</span></button>
+  <button class="drawer-btn" id="drw-cloudy" onclick="drawerWxFilter('cloudy')"> <span style="font-size:13px">☁️</span><span data-i="cloudy">흐림</span><span class="drawer-fcnt" id="drw-cnt-cloudy">0</span></button>
+  <button class="drawer-btn" id="drw-rainy"  onclick="drawerWxFilter('rainy')">  <span style="font-size:13px">🌧️</span><span data-i="rainy">비</span><span class="drawer-fcnt" id="drw-cnt-rainy">0</span></button>
+  <button class="drawer-btn" id="drw-snowy"  onclick="drawerWxFilter('snowy')">  <span style="font-size:13px">❄️</span><span data-i="snowy">눈</span><span class="drawer-fcnt" id="drw-cnt-snowy">0</span></button>
+
+  <div class="drawer-divider"></div>
+
+  <!-- 랜덤 뽑기 -->
+  <button onclick="closeDrawer();openRandom()" style="width:100%;padding:11px 12px;border-radius:9px;border:none;background:var(--accent);color:var(--bg);font-family:'Playfair Display',serif;font-size:14px;font-style:italic;cursor:pointer;display:flex;align-items:center;gap:7px;justify-content:center;transition:opacity .13s;margin-bottom:8px" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    ✦ <span data-i="random">랜덤 뽑기</span>
+  </button>
+
+
+
+  <!-- Settings -->
+  <button onclick="closeDrawer();openTab('settings')" style="width:100%;padding:8px 12px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);cursor:pointer;text-align:left;border-radius:7px;display:flex;align-items:center;gap:7px;transition:color .13s" onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-muted)'">
+    <span>⚙</span><span data-i="settings">설정</span>
+  </button>
+</div>
+
+</div><!-- /main-app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ══════════════════════════════
+//  I18N
+// ══════════════════════════════
+const LANGS = {
+  ko:{
+    add:'추가',looks:'착장',stats:'통계',tags:'해시태그',settings:'설정',
+    weather:'날씨',season:'계절',all:'전체',spring:'봄',summer:'여름',fall:'가을',winter:'겨울',
+    sunny:'화창',cloudy:'흐림',rainy:'비',snowy:'눈',
+    set_weather:'날씨 설정',set_weather_first:'날씨를 먼저 선택해주세요',
+    todays_pick:'오늘의 추천',random:'랜덤 뽑기',todays_look:'오늘의 착장',
+    add_look:'새 착장 추가',photo:'사진',upload_photo:'클릭하여 사진 업로드',
+    required:'(필수)',main_colors:'메인 컬러',pick_3:'최대 3개',
+    style_vibe:'스타일 바이브',pick_2:'1–2개 선택',
+    hashtag:'해시태그',add_tag:'추가',date_memo:'날짜 / 메모 추가 (선택)',date:'날짜',memo:'메모',save:'저장하기',
+    spin_again:'🎲 다시 뽑기',detail:'착장 상세',today_weather:'오늘 날씨',wx_desc:'날씨를 선택하면 맞는 착장을 추천해드려요.',
+    pro_feature:'Lux 기능이에요',later:'나중에 할게요',
+    morning_notif:'아침 알림',morning_notif_sub:'매일 오전 8시, 날씨에 맞는 착장을 추천해드려요',
+    season_dist:'계절별 분포',my:'나의',stats_title:'착장 통계',
+    settings_title:'설정',region_lang:'지역 & 언어',city:'도시',change:'변경',language:'언어',
+    appearance:'테마',theme:'컬러 테마',theme_sub:'앱 전체 색상을 변경해요',
+    data:'데이터',total_looks:'저장된 착장',delete_all:'전체 삭제',reset_onboard:'온보딩 다시 보기',reset:'초기화',
+    pro_desc:'테마 팩, 클라우드 백업, 홈 화면 위젯으로 더 풍부한 착장 관리를 경험해보세요.',
+    theme_pack:'테마 팩',theme_pack_desc:'4가지 컬러 테마로 앱 분위기를 바꿔보세요.',available:'사용 가능',
+    cloud_backup:'클라우드 백업',cloud_backup_desc:'iCloud 자동 백업 및 기기 간 동기화.',widget:'홈 화면 위젯',widget_desc:'오늘의 착장을 홈 화면에서 바로 확인.',
+    unlock:'잠금 해제',annual_note:'연간 결제 시 ₩29,900 · 언제든 취소 가능',
+    fetching_wx:'날씨 불러오는 중…',refresh:'새로고침',loading_reco:'날씨를 불러오는 중이에요…',worn_today:'오늘 입음',mark_worn:'오늘 입음 표시',unmark_worn:'표시 해제',
+    saved:'저장되었어요 ✦',deleted:'삭제되었어요',worn_marked:'오늘 입음으로 표시됐어요 ✓',
+    select_season:'계절을 선택해주세요',select_weather:'날씨를 선택해주세요',
+    no_looks:'아직 착장이 없어요',add_first:'첫 번째 착장을 추가해보세요!',
+    no_tags:'태그가 없어요',confirm_delete:'이 착장을 삭제할까요?',confirm_all:'전체 착장을 삭제할까요?',
+    notif_on:'아침 알림이 설정됐어요 🔔',notif_off:'알림이 꺼졌어요',
+    notif_denied:'알림 권한이 거부됐어요. 브라우저 설정에서 허용해주세요.',
+    notif_unsupported:'이 브라우저는 알림을 지원하지 않아요',
+    notif_time_set:'{time}에 알림이 설정됐어요',
+    notif_active:'✓ 매일 {time}에 알림이 전송돼요',
+    notif_on_time:'켜짐 · 매일 {time}',
+    notif_off_label:'꺼짐',
+    storage_full:'저장 공간 부족 — 사진 용량을 줄여주세요',
+    pwa_installed:'앱이 설치됐어요! 📱',
+    today_weather:'오늘 날씨',
+    pro_complete:'✦ Lux 기능이 열렸어요',
+    wx_very_cold:'오늘 매우 춥네요',
+    wx_chilly:'쌀쌀한 날이에요',
+    wx_cool:'선선해요',
+    wx_mild:'기온이 포근해요',
+    wx_spring_fall:'봄/가을 날씨예요',
+    wx_warm:'따뜻하고 좋은 날씨예요',
+    wx_hot:'더운 날이에요',
+    wx_very_cold_sub:'두꺼운 패딩이나 코트를 꼭 챙기세요',
+    wx_chilly_sub:'겨울 아우터가 필요한 날씨예요',
+    wx_cool_sub:'얇은 겉옷 하나 챙기면 좋아요',
+    wx_mild_sub:'레이어링하기 딱 좋은 날씨',
+    wx_spring_fall_sub:'라이트 착장으로 여유롭게',
+    wx_warm_sub:'가볍게 입어도 충분해요',
+    wx_hot_sub:'시원하고 통기성 좋은 착장 추천',
+    popup_empty:'착장을 먼저 추가하면 오늘 날씨에 맞는 착장을 추천해드려요',
+    view_detail:'상세 보기',
+    city_updated:'📍 {city}으로 날씨가 업데이트됐어요',
+    city_unset:'도시 미설정',
+    todays_look_title:'✦ 오늘의 착장',
+    season_reco:'{season} 착장을 추천해요',
+    last_worn:'마지막 착용: {date}',
+    notif_body:'오늘 날씨에 맞는 착장이 준비됐어요 ✦',
+    good_day:'오늘도 멋진 하루 보내세요 ✦',
+    select_country:'나라를 선택해주세요',
+    select_city:'도시를 선택해주세요'
+  },
+  en:{
+    add:"Add",looks:"Looks",stats:"Stats",tags:"Tags",settings:"Settings",
+    weather:"Weather",season:"Season",all:"All",spring:"Spring",summer:"Summer",fall:"Fall",winter:"Winter",
+    sunny:"Sunny",cloudy:"Cloudy",rainy:"Rainy",snowy:"Snowy",
+    set_weather:"Set Weather",set_weather_first:"Please select today's weather",
+    todays_pick:"Today's Pick",random:"Random",todays_look:"Today's Look",
+    add_look:"Add New Look",photo:"Photo",upload_photo:"Click to upload photo",
+    required:"(required)",main_colors:"Main Colors",pick_3:"Pick up to 3",
+    style_vibe:"Style Vibe",pick_2:"Choose 1-2",
+    hashtag:"Hashtag",add_tag:"Add",date_memo:"Add Date / Note (optional)",date:"Date",memo:"Note",save:"Save",
+    spin_again:"🎲 Spin Again",detail:"Look Detail",today_weather:"Today's Weather",wx_desc:"Select weather for a recommendation.",
+    pro_feature:"Lux Feature",later:"Maybe Later",
+    morning_notif:"Morning Reminder",morning_notif_sub:"Daily — outfit suggestion based on weather",
+    season_dist:"By Season",my:"My",stats_title:"Look Stats",
+    settings_title:"Settings",region_lang:"Region & Language",city:"City",change:"Change",language:"Language",
+    appearance:"Appearance",theme:"Color Theme",theme_sub:"Change the overall app color",
+    data:"Data",total_looks:"Total Looks",delete_all:"Delete All",reset_onboard:"Redo Onboarding",reset:"Reset",
+    pro_desc:"Theme packs and more — unlock the full experience.",
+    theme_pack:"Theme Pack",theme_pack_desc:"10 color themes to change the app mood.",available:"Available",
+    cloud_backup:"Cloud Backup",cloud_backup_desc:"Auto-backup to iCloud, sync across devices.",
+    widget:"Home Widget",widget_desc:"See today's look right from your home screen.",
+    unlock:"Unlock",annual_note:"Annual plan $29.99 · Cancel anytime",
+    fetching_wx:"Fetching weather…",refresh:"Refresh",loading_reco:"Fetching weather…",
+    worn_today:"Worn Today",mark_worn:"Mark as worn today",unmark_worn:"Unmark",
+    saved:"Saved ✦",deleted:"Deleted",worn_marked:"Marked as worn today ✓",
+    select_season:"Please select a season",select_weather:"Please select weather",
+    no_looks:"No looks yet",add_first:"Add your first look!",
+    no_tags:"No tags yet",confirm_delete:"Delete this look?",confirm_all:"Delete all looks?",
+    notif_on:"Morning reminder set 🔔",notif_off:"Reminder turned off",
+    notif_denied:"Notification permission denied. Please allow in browser settings.",
+    notif_unsupported:"This browser does not support notifications",
+    notif_time_set:"Alarm set for {time}",
+    notif_active:"Daily reminder at {time}",
+    notif_on_time:"On · Daily {time}",
+    notif_off_label:"Off",
+    storage_full:"Storage full — please use a smaller photo",
+    pwa_installed:"App installed! 📱",
+    pro_complete:"✦ Lux unlocked",
+    wx_very_cold:"Very cold today",
+    wx_chilly:"Chilly today",
+    wx_cool:"Cool weather",
+    wx_mild:"Mild temperature",
+    wx_spring_fall:"Spring/Fall weather",
+    wx_warm:"Warm and nice",
+    wx_hot:"Hot today",
+    wx_very_cold_sub:"Pack a thick coat — you will need it",
+    wx_chilly_sub:"Winter outerwear recommended",
+    wx_cool_sub:"A light jacket will do",
+    wx_mild_sub:"Perfect for layering",
+    wx_spring_fall_sub:"Go for a light, relaxed look",
+    wx_warm_sub:"Light clothing is enough",
+    wx_hot_sub:"Breathable, lightweight outfit recommended",
+    popup_empty:"Add your first look to get weather-based recommendations",
+    view_detail:"View Detail",
+    city_updated:"📍 Weather updated for {city}",
+    city_unset:"City not set",
+    todays_look_title:"Today's Look",
+    season_reco:"Recommended for {season}",
+    last_worn:"Last worn: {date}",
+    notif_body:"Today's outfit is ready ✦",
+    good_day:"Have a great day ✦",
+    select_country:"Select a country",
+    select_city:"Select a city"
+  },
+  ja:{
+    add:'追加',looks:'コーデ',stats:'統計',tags:'タグ',settings:'設定',
+    weather:'天気',season:'季節',all:'すべて',spring:'春',summer:'夏',fall:'秋',winter:'冬',
+    sunny:'晴れ',cloudy:'曇り',rainy:'雨',snowy:'雪',
+    set_weather:'天気を設定',set_weather_first:'今日の天気を選んでください',
+    todays_pick:'今日のおすすめ',random:'ランダム',todays_look:'今日のコーデ',
+    add_look:'新しいコーデを追加',photo:'写真',upload_photo:'クリックして写真をアップロード',
+    required:'(必須)',main_colors:'メインカラー',pick_3:'最大3つ',
+    style_vibe:'スタイル',pick_2:'1〜2つ選択',
+    hashtag:'ハッシュタグ',add_tag:'追加',date_memo:'日付 / メモを追加（任意）',date:'日付',memo:'メモ',save:'保存',
+    spin_again:'🎲 もう一度',detail:'コーデ詳細',today_weather:'今日の天気',wx_desc:'天気を選ぶとコーデをおすすめします。',
+    pro_feature:'Lux機能です',later:'あとで',
+    morning_notif:'朝のリマインダー',morning_notif_sub:'毎朝8時、天気に合わせたコーデをおすすめ',
+    season_dist:'季節別',my:'私の',stats_title:'コーデ統計',
+    settings_title:'設定',region_lang:'地域 & 言語',city:'都市',change:'変更',language:'言語',
+    appearance:'テーマ',theme:'カラーテーマ',theme_sub:'アプリ全体の色を変更',
+    data:'データ',total_looks:'コーデ数',delete_all:'全て削除',reset_onboard:'初期設定をやり直す',reset:'リセット',
+    pro_desc:'テーマ、クラウドバックアップ、ウィジェットで快適な管理を。',
+    theme_pack:'テーマパック',theme_pack_desc:'4つのテーマから選べます。',available:'利用可能',
+    cloud_backup:'クラウドバックアップ',cloud_backup_desc:'iCloudに自動バックアップ。',widget:'ホームウィジェット',widget_desc:'ホーム画面で今日のコーデを確認。',
+    unlock:'アンロック',annual_note:'年間プラン ₩29,900 · いつでもキャンセル可',
+    fetching_wx:'天気取得中…',refresh:'更新',loading_reco:'天気取得中…',worn_today:'今日着用',mark_worn:'今日着用としてマーク',unmark_worn:'マークを外す',
+    saved:'保存しました ✦',deleted:'削除しました',worn_marked:'今日着用としてマークしました ✓',
+    select_season:'季節を選んでください',select_weather:'天気を選んでください',
+    no_looks:'まだコーデがありません',add_first:'最初のコーデを追加しましょう！',
+    no_tags:'タグがありません',confirm_delete:'このコーデを削除しますか？',confirm_all:'全てのコーデを削除しますか？',
+    notif_on:'朝のリマインダーを設定しました 🔔',notif_off:'リマインダーをオフにしました',
+    notif_denied:'通知が拒否されました。ブラウザ設定で許可してください。',
+    notif_unsupported:'このブラウザは通知に対応していません',
+    notif_time_set:'{time}にアラームを設定しました',
+    notif_active:'✓ 毎日{time}に通知が届きます',
+    notif_on_time:'オン · 毎日{time}',
+    notif_off_label:'オフ',
+    storage_full:'ストレージ不足 — 写真を小さくしてください',
+    pwa_installed:'アプリがインストールされました！ 📱',
+    today_weather:'今日の天気',
+    pro_complete:'決済完了！✦ Lux 機能が解放されました'
+  },
+  zh:{
+    add:'添加',looks:'穿搭',stats:'统计',tags:'标签',settings:'设置',
+    weather:'天气',season:'季节',all:'全部',spring:'春',summer:'夏',fall:'秋',winter:'冬',
+    sunny:'晴天',cloudy:'多云',rainy:'雨天',snowy:'雪天',
+    set_weather:'设置天气',set_weather_first:'请先选择今日天气',
+    todays_pick:'今日推荐',random:'随机搭配',todays_look:'今日穿搭',
+    add_look:'添加新穿搭',photo:'照片',upload_photo:'点击上传照片',
+    required:'(必填)',main_colors:'主要颜色',pick_3:'最多3种',
+    style_vibe:'风格',pick_2:'选1–2个',
+    hashtag:'标签',add_tag:'添加',date_memo:'添加日期 / 备注（选填）',date:'日期',memo:'备注',save:'保存',
+    spin_again:'🎲 再次抽取',detail:'穿搭详情',today_weather:'今日天气',wx_desc:'选择天气后为您推荐穿搭。',
+    pro_feature:'Lux功能',later:'以后再说',
+    morning_notif:'早晨提醒',morning_notif_sub:'每天早上8点，根据天气推荐穿搭',
+    season_dist:'按季节',my:'我的',stats_title:'穿搭统计',
+    settings_title:'设置',region_lang:'地区 & 语言',city:'城市',change:'更改',language:'语言',
+    appearance:'主题',theme:'颜色主题',theme_sub:'更改整体配色',
+    data:'数据',total_looks:'穿搭总数',delete_all:'全部删除',reset_onboard:'重新引导',reset:'重置',
+    pro_desc:'主题包、云备份、桌面小组件，解锁完整体验。',
+    theme_pack:'主题包',theme_pack_desc:'4种颜色主题随心切换。',available:'可用',
+    cloud_backup:'云备份',cloud_backup_desc:'自动备份到iCloud，跨设备同步。',widget:'桌面小组件',widget_desc:'在主屏幕直接查看今日穿搭。',
+    unlock:'解锁',annual_note:'年度套餐 ₩29,900 · 随时可取消',
+    fetching_wx:'正在获取天气…',refresh:'刷新',loading_reco:'正在获取天气…',worn_today:'今日已穿',mark_worn:'标记为今日已穿',unmark_worn:'取消标记',
+    saved:'已保存 ✦',deleted:'已删除',worn_marked:'已标记为今日已穿 ✓',
+    select_season:'请选择季节',select_weather:'请选择天气',
+    no_looks:'还没有穿搭',add_first:'添加第一套穿搭吧！',
+    no_tags:'还没有标签',confirm_delete:'删除这套穿搭？',confirm_all:'删除全部穿搭？',
+    notif_on:'早晨提醒已设置 🔔',notif_off:'提醒已关闭',
+    notif_denied:'通知权限被拒绝，请在浏览器设置中允许。',
+    notif_unsupported:'此浏览器不支持通知',
+    notif_time_set:'已设置{time}提醒',
+    notif_active:'✓ 每天{time}发送提醒',
+    notif_on_time:'开启 · 每天{time}',
+    notif_off_label:'关闭',
+    storage_full:'存储空间不足 — 请使用较小的照片',
+    pwa_installed:'应用已安装！ 📱',
+    today_weather:'今日天气',
+    pro_complete:'支付完成！Lux功能已解锁 ★'
+  }
+};
+
+// ══════════════════════════════
+//  STATE
+// ══════════════════════════════
+let looks    = JSON.parse(localStorage.getItem('lookbook') || '[]');
+let curTheme = localStorage.getItem('lookbook_theme') || 'default';
+let todayWx  = localStorage.getItem('lookbook_todaywx') || null;
+let curLang  = localStorage.getItem('lookbook_lang') || 'en';
+let curCity  = JSON.parse(localStorage.getItem('lookbook_city') || 'null');
+let todayKey = new Date().toDateString();
+let wornToday= JSON.parse(localStorage.getItem('lookbook_worn_'+todayKey)||'[]');
+
+let wxFilter = null, seasonFilter = 'all';
+let tempUnit = localStorage.getItem('lookbook_temp_unit') || 'C'; // 'C' or 'F'
+let selPhoto=null,selSeason=null,selWx=null,selHtags=[],selColors=[],selVibes=[];
+let rndSeason='all', activeHtag=null;
+let obLang='en', obCity=null;
+
+const SM={spring:{label:'Spring',emoji:'🌸',tag:'tag-spring',se:'se-spring'},summer:{label:'Summer',emoji:'☀️',tag:'tag-summer',se:'se-summer'},fall:{label:'Fall',emoji:'🍂',tag:'tag-fall',se:'se-fall'},winter:{label:'Winter',emoji:'❄️',tag:'tag-winter',se:'se-winter'}};
+const WM={sunny:{emoji:'☀️',cls:'wb-sunny'},cloudy:{emoji:'☁️',cls:'wb-cloudy'},rainy:{emoji:'🌧️',cls:'wb-rainy'},snowy:{emoji:'❄️',cls:'wb-snowy'}};
+
+const COLORS=[
+  {id:'black', label:'Black',  hex:'#1A1A1A'},
+  {id:'white', label:'White',  hex:'#F5F5F0', border:'#ddd'},
+  {id:'beige', label:'Beige',  hex:'#D4C4A8'},
+  {id:'denim', label:'Denim',  hex:'#4A6FA5'},
+  {id:'brown', label:'Brown',  hex:'#8B5E3C'},
+  {id:'gray',  label:'Gray',   hex:'#9E9E9E'},
+  {id:'navy',  label:'Navy',   hex:'#1B2A4A'},
+  {id:'olive', label:'Olive',  hex:'#6B7B3A'},
+  {id:'red',   label:'Red',    hex:'#C0392B'},
+  {id:'pink',  label:'Pink',   hex:'#E91E8C'},
+  {id:'yellow',label:'Yellow', hex:'#F4C542'},
+  {id:'green', label:'Green',  hex:'#2E7D32'},
+];
+const VIBES=['Minimal','Casual','Chic','Cozy','Street','Sporty','Classic','Boho','Dark','Preppy'];
+
+// CITIES array removed — now using free-text + Open-Meteo Geocoding API
+
+function t(key){ return (LANGS[curLang]||LANGS.ko)[key]||key; }
+function applyI18n(){
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    const key=el.getAttribute('data-i');
+    const val=t(key);
+    if(val) el.textContent=val;
+  });
+  // placeholder
+  const hi=document.getElementById('htag-input');
+  if(hi) hi.placeholder=curLang==='en'?'#workwear  #casual':curLang==='ja'?'#オフィス  #カジュアル':curLang==='zh'?'#工作装  #休闲':'#출근룩  #데이트룩';
+  const hn=document.getElementById('look-note');
+  if(hn) hn.placeholder=curLang==='en'?'Notes about this look…':curLang==='ja'?'このコーデについてのメモ…':curLang==='zh'?'关于这套穿搭的备注…':'이 날의 착장에 대한 메모를 남겨보세요…';
+}
+
+// ══════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════
+function checkOnboard(){
+  if(localStorage.getItem('lookbook_onboard_done')==='1'){
+    const os=document.getElementById('onboard-screen'); if(os) os.style.display='none';
+    const ma=document.getElementById('main-app'); if(ma) ma.style.display='block';
+    initApp();
+  } else {
+    // show onboarding step 1
+    initObCountryDropdown();
+  }
+}
+
+// ══════════════════════════════
+//  CITY DATABASE (built-in, works offline)
+// ══════════════════════════════
+const CITY_DB = [
+  // 한국
+  {name:'Seoul',         aka:['서울'],          country:'South Korea', flag:'🇰🇷', lat:37.5665,  lng:126.9780},
+  {name:'Busan',         aka:['부산'],           country:'South Korea', flag:'🇰🇷', lat:35.1796,  lng:129.0756},
+  {name:'Incheon',       aka:['인천'],           country:'South Korea', flag:'🇰🇷', lat:37.4563,  lng:126.7052},
+  {name:'Daegu',         aka:['대구'],           country:'South Korea', flag:'🇰🇷', lat:35.8714,  lng:128.6014},
+  {name:'Daejeon',       aka:['대전'],           country:'South Korea', flag:'🇰🇷', lat:36.3504,  lng:127.3845},
+  {name:'Gwangju',       aka:['광주'],           country:'South Korea', flag:'🇰🇷', lat:35.1595,  lng:126.8526},
+  {name:'Suwon',         aka:['수원'],           country:'South Korea', flag:'🇰🇷', lat:37.2636,  lng:127.0286},
+  {name:'Jeju',          aka:['제주'],           country:'South Korea', flag:'🇰🇷', lat:33.4996,  lng:126.5312},
+  // 일본
+  {name:'Tokyo',         aka:['도쿄','東京'],    country:'Japan',       flag:'🇯🇵', lat:35.6762,  lng:139.6503},
+  {name:'Osaka',         aka:['오사카','大阪'],  country:'Japan',       flag:'🇯🇵', lat:34.6937,  lng:135.5023},
+  {name:'Kyoto',         aka:['교토','京都'],    country:'Japan',       flag:'🇯🇵', lat:35.0116,  lng:135.7681},
+  {name:'Sapporo',       aka:['삿포로','札幌'],  country:'Japan',       flag:'🇯🇵', lat:43.0618,  lng:141.3545},
+  {name:'Fukuoka',       aka:['후쿠오카'],       country:'Japan',       flag:'🇯🇵', lat:33.5904,  lng:130.4017},
+  {name:'Nagoya',        aka:['나고야','名古屋'],country:'Japan',       flag:'🇯🇵', lat:35.1815,  lng:136.9066},
+  // 중국
+  {name:'Beijing',       aka:['베이징','北京'],  country:'China',       flag:'🇨🇳', lat:39.9042,  lng:116.4074},
+  {name:'Shanghai',      aka:['상하이','上海'],  country:'China',       flag:'🇨🇳', lat:31.2304,  lng:121.4737},
+  {name:'Guangzhou',     aka:['광저우','广州'],  country:'China',       flag:'🇨🇳', lat:23.1291,  lng:113.2644},
+  {name:'Shenzhen',      aka:['선전','深圳'],    country:'China',       flag:'🇨🇳', lat:22.5431,  lng:114.0579},
+  {name:'Chengdu',       aka:['청두','成都'],    country:'China',       flag:'🇨🇳', lat:30.5728,  lng:104.0668},
+  // 미국 — Northeast
+  {name:'New York',      aka:['뉴욕','nyc'],     country:'USA',         flag:'🇺🇸', lat:40.7128,  lng:-74.0060},
+  {name:'Boston',        aka:['보스턴'],         country:'USA',         flag:'🇺🇸', lat:42.3601,  lng:-71.0589},
+  {name:'Philadelphia',  aka:['필라델피아'],     country:'USA',         flag:'🇺🇸', lat:39.9526,  lng:-75.1652},
+  {name:'Washington DC', aka:['워싱턴'],         country:'USA',         flag:'🇺🇸', lat:38.9072,  lng:-77.0369},
+  {name:'Baltimore',     aka:['볼티모어'],       country:'USA',         flag:'🇺🇸', lat:39.2904,  lng:-76.6122},
+  {name:'Pittsburgh',    aka:['피츠버그'],       country:'USA',         flag:'🇺🇸', lat:40.4406,  lng:-79.9959},
+  {name:'Newark',        aka:['뉴어크'],         country:'USA',         flag:'🇺🇸', lat:40.7357,  lng:-74.1724},
+  {name:'Buffalo',       aka:['버팔로'],         country:'USA',         flag:'🇺🇸', lat:42.8864,  lng:-78.8784},
+  // 미국 — South
+  {name:'Miami',         aka:['마이애미'],       country:'USA',         flag:'🇺🇸', lat:25.7617,  lng:-80.1918},
+  {name:'Atlanta',       aka:['애틀란타'],       country:'USA',         flag:'🇺🇸', lat:33.7490,  lng:-84.3880},
+  {name:'Houston',       aka:['휴스턴'],         country:'USA',         flag:'🇺🇸', lat:29.7604,  lng:-95.3698},
+  {name:'Dallas',        aka:['달라스'],         country:'USA',         flag:'🇺🇸', lat:32.7767,  lng:-96.7970},
+  {name:'Austin',        aka:['오스틴'],         country:'USA',         flag:'🇺🇸', lat:30.2672,  lng:-97.7431},
+  {name:'San Antonio',   aka:['샌안토니오'],     country:'USA',         flag:'🇺🇸', lat:29.4241,  lng:-98.4936},
+  {name:'Nashville',     aka:['내슈빌'],         country:'USA',         flag:'🇺🇸', lat:36.1627,  lng:-86.7816},
+  {name:'Charlotte',     aka:['샬럿'],           country:'USA',         flag:'🇺🇸', lat:35.2271,  lng:-80.8431},
+  {name:'Orlando',       aka:['올랜도'],         country:'USA',         flag:'🇺🇸', lat:28.5383,  lng:-81.3792},
+  {name:'Tampa',         aka:['탬파'],           country:'USA',         flag:'🇺🇸', lat:27.9506,  lng:-82.4572},
+  {name:'Jacksonville',  aka:['잭슨빌'],         country:'USA',         flag:'🇺🇸', lat:30.3322,  lng:-81.6557},
+  {name:'New Orleans',   aka:['뉴올리언스'],     country:'USA',         flag:'🇺🇸', lat:29.9511,  lng:-90.0715},
+  {name:'Memphis',       aka:['멤피스'],         country:'USA',         flag:'🇺🇸', lat:35.1495,  lng:-90.0490},
+  {name:'Louisville',    aka:['루이빌'],         country:'USA',         flag:'🇺🇸', lat:38.2527,  lng:-85.7585},
+  {name:'Richmond',      aka:['리치먼드'],       country:'USA',         flag:'🇺🇸', lat:37.5407,  lng:-77.4360},
+  {name:'Raleigh',       aka:['롤리'],           country:'USA',         flag:'🇺🇸', lat:35.7796,  lng:-78.6382},
+  {name:'Oklahoma City', aka:['오클라호마시티'], country:'USA',         flag:'🇺🇸', lat:35.4676,  lng:-97.5164},
+  {name:'El Paso',       aka:['엘패소'],         country:'USA',         flag:'🇺🇸', lat:31.7619,  lng:-106.4850},
+  {name:'Savannah',      aka:['서배너'],         country:'USA',         flag:'🇺🇸', lat:32.0809,  lng:-81.0912},
+  // 미국 — Midwest
+  {name:'Chicago',       aka:['시카고'],         country:'USA',         flag:'🇺🇸', lat:41.8781,  lng:-87.6298},
+  {name:'Detroit',       aka:['디트로이트'],     country:'USA',         flag:'🇺🇸', lat:42.3314,  lng:-83.0458},
+  {name:'Minneapolis',   aka:['미니애폴리스'],   country:'USA',         flag:'🇺🇸', lat:44.9778,  lng:-93.2650},
+  {name:'Cleveland',     aka:['클리블랜드'],     country:'USA',         flag:'🇺🇸', lat:41.4993,  lng:-81.6944},
+  {name:'Columbus',      aka:['콜럼버스'],       country:'USA',         flag:'🇺🇸', lat:39.9612,  lng:-82.9988},
+  {name:'Indianapolis',  aka:['인디애나폴리스'], country:'USA',         flag:'🇺🇸', lat:39.7684,  lng:-86.1581},
+  {name:'Kansas City',   aka:['캔자스시티'],     country:'USA',         flag:'🇺🇸', lat:39.0997,  lng:-94.5786},
+  {name:'Milwaukee',     aka:['밀워키'],         country:'USA',         flag:'🇺🇸', lat:43.0389,  lng:-87.9065},
+  {name:'St. Louis',     aka:['세인트루이스'],   country:'USA',         flag:'🇺🇸', lat:38.6270,  lng:-90.1994},
+  {name:'Cincinnati',    aka:['신시내티'],       country:'USA',         flag:'🇺🇸', lat:39.1031,  lng:-84.5120},
+  {name:'Omaha',         aka:['오마하'],         country:'USA',         flag:'🇺🇸', lat:41.2565,  lng:-95.9345},
+  {name:'Des Moines',    aka:['디모인'],         country:'USA',         flag:'🇺🇸', lat:41.6005,  lng:-93.6091},
+  {name:'Wichita',       aka:['위치타'],         country:'USA',         flag:'🇺🇸', lat:37.6872,  lng:-97.3301},
+  {name:'Tulsa',         aka:['털사'],           country:'USA',         flag:'🇺🇸', lat:36.1540,  lng:-95.9928},
+  // 미국 — West
+  {name:'Los Angeles',   aka:['로스앤젤레스','la'],country:'USA',       flag:'🇺🇸', lat:34.0522,  lng:-118.2437},
+  {name:'San Francisco', aka:['샌프란시스코','sf'],country:'USA',       flag:'🇺🇸', lat:37.7749,  lng:-122.4194},
+  {name:'Seattle',       aka:['시애틀'],         country:'USA',         flag:'🇺🇸', lat:47.6062,  lng:-122.3321},
+  {name:'Las Vegas',     aka:['라스베가스'],     country:'USA',         flag:'🇺🇸', lat:36.1699,  lng:-115.1398},
+  {name:'Phoenix',       aka:['피닉스'],         country:'USA',         flag:'🇺🇸', lat:33.4484,  lng:-112.0740},
+  {name:'Denver',        aka:['덴버'],           country:'USA',         flag:'🇺🇸', lat:39.7392,  lng:-104.9903},
+  {name:'Portland',      aka:['포틀랜드'],       country:'USA',         flag:'🇺🇸', lat:45.5051,  lng:-122.6750},
+  {name:'San Diego',     aka:['샌디에이고'],     country:'USA',         flag:'🇺🇸', lat:32.7157,  lng:-117.1611},
+  {name:'San Jose',      aka:['산호세'],         country:'USA',         flag:'🇺🇸', lat:37.3382,  lng:-121.8863},
+  {name:'Salt Lake City',aka:['솔트레이크'],     country:'USA',         flag:'🇺🇸', lat:40.7608,  lng:-111.8910},
+  {name:'Sacramento',    aka:['새크라멘토'],     country:'USA',         flag:'🇺🇸', lat:38.5816,  lng:-121.4944},
+  {name:'Albuquerque',   aka:['앨버커키'],       country:'USA',         flag:'🇺🇸', lat:35.0844,  lng:-106.6504},
+  {name:'Tucson',        aka:['투손'],           country:'USA',         flag:'🇺🇸', lat:32.2226,  lng:-110.9747},
+  {name:'Oakland',       aka:['오클랜드'],       country:'USA',         flag:'🇺🇸', lat:37.8044,  lng:-122.2712},
+  {name:'Boise',         aka:['보이시'],         country:'USA',         flag:'🇺🇸', lat:43.6150,  lng:-116.2023},
+  {name:'Reno',          aka:['리노'],           country:'USA',         flag:'🇺🇸', lat:39.5296,  lng:-119.8138},
+  {name:'Scottsdale',    aka:['스코츠데일'],     country:'USA',         flag:'🇺🇸', lat:33.4942,  lng:-111.9261},
+  {name:'Henderson',     aka:['헨더슨'],         country:'USA',         flag:'🇺🇸', lat:36.0395,  lng:-114.9817},
+  // 미국 — Hawaii & Alaska
+  {name:'Honolulu',      aka:['호놀룰루'],       country:'USA',         flag:'🇺🇸', lat:21.3069,  lng:-157.8583},
+  {name:'Maui',          aka:['마우이'],         country:'USA',         flag:'🇺🇸', lat:20.7984,  lng:-156.3319},
+  {name:'Anchorage',     aka:['앵커리지'],       country:'USA',         flag:'🇺🇸', lat:61.2181,  lng:-149.9003},
+  // 유럽
+  {name:'London',        aka:['런던'],           country:'UK',          flag:'🇬🇧', lat:51.5074,  lng:-0.1278},
+  {name:'Paris',         aka:['파리'],           country:'France',      flag:'🇫🇷', lat:48.8566,  lng:2.3522},
+  {name:'Berlin',        aka:['베를린'],         country:'Germany',     flag:'🇩🇪', lat:52.5200,  lng:13.4050},
+  {name:'Amsterdam',     aka:['암스테르담'],     country:'Netherlands', flag:'🇳🇱', lat:52.3676,  lng:4.9041},
+  {name:'Rome',          aka:['로마'],           country:'Italy',       flag:'🇮🇹', lat:41.9028,  lng:12.4964},
+  {name:'Milan',         aka:['밀라노'],         country:'Italy',       flag:'🇮🇹', lat:45.4642,  lng:9.1900},
+  {name:'Barcelona',     aka:['바르셀로나'],     country:'Spain',       flag:'🇪🇸', lat:41.3851,  lng:2.1734},
+  {name:'Madrid',        aka:['마드리드'],       country:'Spain',       flag:'🇪🇸', lat:40.4168,  lng:-3.7038},
+  {name:'Vienna',        aka:['빈'],             country:'Austria',     flag:'🇦🇹', lat:48.2082,  lng:16.3738},
+  {name:'Zurich',        aka:['취리히'],         country:'Switzerland', flag:'🇨🇭', lat:47.3769,  lng:8.5417},
+  {name:'Stockholm',     aka:['스톡홀름'],       country:'Sweden',      flag:'🇸🇪', lat:59.3293,  lng:18.0686},
+  {name:'Copenhagen',    aka:['코펜하겐'],       country:'Denmark',     flag:'🇩🇰', lat:55.6761,  lng:12.5683},
+  {name:'Prague',        aka:['프라하'],         country:'Czech Rep.',  flag:'🇨🇿', lat:50.0755,  lng:14.4378},
+  {name:'Warsaw',        aka:['바르샤바'],       country:'Poland',      flag:'🇵🇱', lat:52.2297,  lng:21.0122},
+  // 동남아
+  {name:'Bangkok',       aka:['방콕'],           country:'Thailand',    flag:'🇹🇭', lat:13.7563,  lng:100.5018},
+  {name:'Singapore',     aka:['싱가포르'],       country:'Singapore',   flag:'🇸🇬', lat:1.3521,   lng:103.8198},
+  {name:'Ho Chi Minh',   aka:['호치민'],         country:'Vietnam',     flag:'🇻🇳', lat:10.8231,  lng:106.6297},
+  {name:'Hanoi',         aka:['하노이'],         country:'Vietnam',     flag:'🇻🇳', lat:21.0285,  lng:105.8542},
+  {name:'Bali',          aka:['발리'],           country:'Indonesia',   flag:'🇮🇩', lat:-8.3405,  lng:115.0920},
+  {name:'Jakarta',       aka:['자카르타'],       country:'Indonesia',   flag:'🇮🇩', lat:-6.2088,  lng:106.8456},
+  {name:'Kuala Lumpur',  aka:['쿠알라룸푸르','kl'],country:'Malaysia',  flag:'🇲🇾', lat:3.1390,   lng:101.6869},
+  {name:'Manila',        aka:['마닐라'],         country:'Philippines', flag:'🇵🇭', lat:14.5995,  lng:120.9842},
+  // 기타
+  {name:'Sydney',        aka:['시드니'],         country:'Australia',   flag:'🇦🇺', lat:-33.8688, lng:151.2093},
+  {name:'Melbourne',     aka:['멜버른'],         country:'Australia',   flag:'🇦🇺', lat:-37.8136, lng:144.9631},
+  {name:'Dubai',         aka:['두바이'],         country:'UAE',         flag:'🇦🇪', lat:25.2048,  lng:55.2708},
+  {name:'Istanbul',      aka:['이스탄불'],       country:'Turkey',      flag:'🇹🇷', lat:41.0082,  lng:28.9784},
+  {name:'Toronto',       aka:['토론토'],         country:'Canada',      flag:'🇨🇦', lat:43.6532,  lng:-79.3832},
+  {name:'Vancouver',     aka:['밴쿠버'],         country:'Canada',      flag:'🇨🇦', lat:49.2827,  lng:-123.1207},
+  {name:'São Paulo',     aka:['상파울루'],       country:'Brazil',      flag:'🇧🇷', lat:-23.5505, lng:-46.6333},
+  {name:'Mexico City',   aka:['멕시코시티'],     country:'Mexico',      flag:'🇲🇽', lat:19.4326,  lng:-99.1332},
+  {name:'Cairo',         aka:['카이로'],         country:'Egypt',       flag:'🇪🇬', lat:30.0444,  lng:31.2357},
+  {name:'Mumbai',        aka:['뭄바이'],         country:'India',       flag:'🇮🇳', lat:19.0760,  lng:72.8777},
+  {name:'Delhi',         aka:['델리'],           country:'India',       flag:'🇮🇳', lat:28.6139,  lng:77.2090},
+  {name:'Moscow',        aka:['모스크바'],       country:'Russia',      flag:'🇷🇺', lat:55.7558,  lng:37.6176},
+];
+
+// ══════════════════════════════
+//  CITY DROPDOWN — country → city
+// ══════════════════════════════
+
+// Get sorted unique countries from CITY_DB
+function getCountries(){
+  const seen = new Set();
+  return CITY_DB
+    .map(c => c.country)
+    .filter(co => { if(seen.has(co)) return false; seen.add(co); return true; })
+    .sort((a,b) => {
+      // Put popular countries first
+      const priority = ['South Korea','USA','Japan','China','UK','France','Germany','Australia','Canada'];
+      const ai = priority.indexOf(a), bi = priority.indexOf(b);
+      if(ai !== -1 && bi !== -1) return ai - bi;
+      if(ai !== -1) return -1;
+      if(bi !== -1) return 1;
+      return a.localeCompare(b, 'en', {sensitivity:'base'});
+    });
+}
+
+function getCitiesForCountry(country){
+  return CITY_DB
+    .filter(city => city.country === country)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity:'base'}));
+}
+
+function getCountryFlag(country){
+  const city = CITY_DB.find(c => c.country === country);
+  return city ? city.flag : '🌍';
+}
+
+// ── ONBOARDING dropdowns ──
+function initObCountryDropdown(){
+  // Options are pre-rendered in HTML; just update placeholder text for current language
+  const ph = document.getElementById('ob-country-placeholder');
+  if(ph) ph.textContent = t('select_country');
+}
+
+function onObCountryChange(){
+  const country = document.getElementById('ob-country-select').value;
+  const cityLabel = document.getElementById('ob-city-label');
+  const citySel   = document.getElementById('ob-city-select');
+  const confirmed = document.getElementById('city-confirmed');
+  if(confirmed) confirmed.style.display = 'none';
+  obCity = null;
+  if(!country){ citySel.style.display='none'; if(cityLabel) cityLabel.style.display='none'; return; }
+  const cities = getCitiesForCountry(country);
+  citySel.innerHTML = `<option value="">${t('select_city')}</option>` +
+    cities.map(city => `<option value="${city.name}">${city.name}</option>`).join('');
+  citySel.style.display = 'block';
+  if(cityLabel) cityLabel.style.display = 'block';
+  // Auto-select if only one city
+  if(cities.length === 1){ citySel.value = cities[0].name; onObCityChange(); }
+}
+
+function onObCityChange(){
+  const country = document.getElementById('ob-country-select').value;
+  const cityName = document.getElementById('ob-city-select').value;
+  if(!cityName) return;
+  const city = CITY_DB.find(c => c.country === country && c.name === cityName);
+  if(!city) return;
+  obCity = { name: city.name, country: city.country, flag: city.flag, lat: city.lat, lng: city.lng };
+  const confirmed  = document.getElementById('city-confirmed');
+  const cname      = document.getElementById('city-confirmed-name');
+  const ccoords    = document.getElementById('city-confirmed-coords');
+  if(confirmed) confirmed.style.display = 'block';
+  if(cname)    cname.textContent    = `${city.flag} ${city.name}, ${city.country}`;
+  if(ccoords)  ccoords.textContent  = `${city.lat.toFixed(2)}°N, ${city.lng.toFixed(2)}°E`;
+}
+
+// ── SETTINGS dropdowns ──
+function initSettingsCountryDropdown(){
+  const sel = document.getElementById('settings-country-select');
+  if(!sel) return;
+  const countries = getCountries();
+  sel.innerHTML = `<option value="">${t('select_country')}</option>` +
+    countries.map(co => `<option value="${co}">${getCountryFlag(co)} ${co}</option>`).join('');
+  // Pre-select current country
+  if(curCity){
+    sel.value = curCity.country;
+    if(curCity.country) onSettingsCountryChange(curCity.name);
+  }
+}
+
+function onSettingsCountryChange(preselect){
+  const country = document.getElementById('settings-country-select').value;
+  const citySel = document.getElementById('settings-city-select');
+  if(!country){ citySel.style.display='none'; return; }
+  const cities = getCitiesForCountry(country);
+  citySel.innerHTML = `<option value="">${t('select_city')}</option>` +
+    cities.map(city => `<option value="${city.name}">${city.name}</option>`).join('');
+  citySel.style.display = 'block';
+  if(preselect){ citySel.value = preselect; }
+}
+
+function onSettingsCityChange(){
+  const country  = document.getElementById('settings-country-select').value;
+  const cityName = document.getElementById('settings-city-select').value;
+  if(!cityName) return;
+  const city = CITY_DB.find(c => c.country === country && c.name === cityName);
+  if(!city) return;
+  curCity = { name: city.name, country: city.country, flag: city.flag, lat: city.lat, lng: city.lng };
+  localStorage.setItem('lookbook_city', JSON.stringify(curCity));
+  const sub = document.getElementById('settings-city-sub');
+  if(sub) sub.textContent = `${city.flag} ${city.name}, ${city.country}`;
+  fetchWeather();
+  showToast(t('city_updated').replace('{city}', city.name));
+}
+
+// Legacy stubs (kept for compatibility)
+function searchCityDB(){ return []; }
+function hideSuggestions(){}
+function onCityInput(){ initObCountryDropdown(); }
+function searchCity(){}
+function selectCityResult(){}
+function onCityInputSettings(){}
+function searchCitySettings(){}
+function selectCityResultSettings(){}
+function pickLang(btn){
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  obLang = btn.dataset.lang;
+  curLang = obLang;
+  // Just update the next button text — safe, no applyI18n during onboarding
+  const nextLabels = {ko:'다음 →', en:'Next →', ja:'次へ →', zh:'下一步 →'};
+  document.querySelectorAll('.onboard-next').forEach(b => {
+    b.textContent = nextLabels[obLang] || 'Next →';
+  });
+  // Update step 1 sub text
+  const step1Subs = {
+    ko:'착장을 기록하고 오늘 뭐 입을지 고민을 해결해드려요.<br>언어를 선택하세요.',
+    en:'Record your outfits, get daily recommendations.<br>Select your language to get started.',
+    ja:'コーデを記録して、毎日の着こなしをサポート。<br>言語を選んでください。',
+    zh:'记录穿搭，获取每日推荐。<br>请选择语言。'
+  };
+  const step2Subs = {
+    ko:'나라와 도시를 선택하면 날씨를 기반으로 착장을 추천해드려요.',
+    en:'Select your country and city for weather-based recommendations.',
+    ja:'国と都市を選ぶと、天気に合わせたコーデを提案します。',
+    zh:'选择国家和城市，即可获得基于天气的穿搭推荐。'
+  };
+  const countryLabels = {ko:'나라 선택', en:'Country', ja:'国を選択', zh:'选择国家'};
+  const cityLabels    = {ko:'도시 선택', en:'City',    ja:'都市を選択', zh:'选择城市'};
+  const el1 = document.getElementById('ob-step1-sub');
+  const el2 = document.getElementById('ob-step2-sub');
+  const cl  = document.getElementById('ob-country-label');
+  const cil = document.getElementById('ob-city-label');
+  if(el1) el1.innerHTML = step1Subs[obLang] || step1Subs.en;
+  if(el2) el2.textContent = step2Subs[obLang] || step2Subs.en;
+  if(cl)  cl.textContent  = countryLabels[obLang] || 'Country';
+  if(cil) cil.textContent = cityLabels[obLang] || 'City';
+}
+
+function obNext(step){
+  if(obLang) curLang = obLang; // set language, applyI18n called after onboarding finishes
+
+  if(step===2){
+    // Populate country dropdown when entering step 2
+    initObCountryDropdown();
+  }
+
+  if(step===3){
+    const langNames={ko:'한국어',en:'English',ja:'日本語',zh:'中文'};
+    const icon = document.getElementById('ob-done-city-icon');
+    const city = document.getElementById('ob-done-city');
+    const lang = document.getElementById('ob-done-lang');
+    if(obCity){
+      if(icon) icon.textContent = obCity.flag || '📍';
+      if(city) city.textContent = `${obCity.name}, ${obCity.country}`;
+    } else {
+      if(icon) icon.textContent = '📍';
+      if(city) city.textContent = t('city_unset');
+    }
+    if(lang) lang.textContent = `${langNames[obLang]}`;
+  }
+  document.querySelectorAll('.onboard-step').forEach((s,i)=>s.classList.toggle('active',i===step-1));
+}
+
+function finishOnboard(){
+  curLang=obLang;
+  curCity=obCity||null;
+  localStorage.setItem('lookbook_lang',curLang);
+  if(curCity) localStorage.setItem('lookbook_city',JSON.stringify(curCity));
+  localStorage.setItem('lookbook_onboard_done','1');
+  const _os=document.getElementById('onboard-screen'); if(_os) _os.style.display='none';
+  const _ma=document.getElementById('main-app'); if(_ma) _ma.style.display='block';
+  initApp();
+}
+function resetOnboard(){
+  localStorage.removeItem('lookbook_onboard_done');
+  location.reload();
+}
+
+// ══════════════════════════════
+//  INIT
+// ══════════════════════════════
+function initApp(){
+  applyThemeByName(curTheme);
+  applyI18n();
+  document.querySelectorAll('#theme-grid .theme-swatch').forEach(el=>el.classList.toggle('active',el.dataset.theme===curTheme));
+  const ls=document.getElementById('lang-select'); if(ls) ls.value=curLang;
+  const ts=document.getElementById('theme-select'); if(ts) ts.value=curTheme;
+  if(curCity){
+    const _csub=document.getElementById('settings-city-sub');
+    if(_csub) _csub.textContent=`${curCity.flag||'📍'} ${curCity.name}`;
+    }
+  const _lsub=document.getElementById('settings-lang-sub'); if(_lsub) _lsub.textContent={ko:'한국어',en:'English',ja:'日本語',zh:'中文'}[curLang];
+  fetchWeather(); // buildColorPicker/buildVibePicker called in openAddModal
+  updateUnitToggleUI();
+  wxFilter = null; // default wx = all
+  setSeasonFilterByName(getCurrentSeason()); // default to current season
+  renderStats();
+  updateCounts();
+  setTimeout(()=>{ initNotifUI(); if(notifEnabled && typeof Notification!=="undefined" && Notification.permission==="granted") scheduleNotification(); }, 200);
+}
+
+// ══════════════════════════════
+//  OPEN-METEO WEATHER FETCH
+// ══════════════════════════════
+const WX_CODE_MAP={
+  0:'sunny',1:'sunny',2:'cloudy',3:'cloudy',
+  45:'cloudy',48:'cloudy',
+  51:'rainy',53:'rainy',55:'rainy',56:'rainy',57:'rainy',
+  61:'rainy',63:'rainy',65:'rainy',66:'rainy',67:'rainy',
+  71:'snowy',73:'snowy',75:'snowy',77:'snowy',
+  80:'rainy',81:'rainy',82:'rainy',
+  85:'snowy',86:'snowy',
+  95:'rainy',96:'rainy',99:'rainy'
+};
+// CITY_COORDS removed — lat/lng stored directly on curCity
+
+let liveWeatherData=null;
+
+async function fetchWeather(){
+  const lat = curCity?.lat;
+  const lng = curCity?.lng;
+  if(!lat || !lng){ autoDetectWxFallback(); return; }
+
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weathercode&timezone=auto&forecast_days=1`;
+    const res=await fetch(url, {mode:'cors'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const temp=Math.round(data.current.temperature_2m);
+    const code=data.current.weathercode;
+    const wx=WX_CODE_MAP[code]||'cloudy';
+    liveWeatherData={temp,code,wx};
+    showWeatherUI(temp,wx);
+    applyWxToApp(wx);
+    maybeShowTodayPopup();
+  }catch(e){
+    console.log('Weather: using fallback (', e.message, ')');
+    autoDetectWxFallback();
+  }
+}
+
+function showWeatherUI(temp,wx){
+  const loading = document.getElementById('wx-strip-loading');
+  const loaded  = document.getElementById('wx-strip-loaded');
+  if(loading) loading.style.display = 'none';
+  if(loaded){
+    loaded.style.display = 'flex';
+    const tempEl = document.getElementById('ws-temp');
+    const chip   = document.getElementById('ws-chip');
+    const desc   = document.getElementById('ws-desc');
+    const city   = document.getElementById('ws-city');
+    if(tempEl) tempEl.textContent = toDisplayTemp(temp) + unitLabel();
+    if(chip){
+      chip.textContent = (WM[wx]?.emoji||'') + ' ' + t(wx);
+      chip.className = 'wx-strip-chip c-' + wx;
+    }
+    if(desc){
+      const wxKeys = [
+        [0,'wx_very_cold'],[5,'wx_chilly'],[10,'wx_cool'],
+        [15,'wx_mild'],[20,'wx_spring_fall'],[25,'wx_warm'],[99,'wx_hot']
+      ];
+      const wxKey2 = (wxKeys.find(([lim])=>temp<=lim)||[99,'wx_hot'])[1];
+      desc.textContent = t(wxKey2);
+    }
+    if(city && curCity) city.textContent = curCity.name;
+  }
+}
+
+function applyWxToApp(wx){
+  todayWx=wx; localStorage.setItem('lookbook_todaywx',wx);
+  const btn=document.getElementById('fb-'+wx);
+  if(btn){
+    wxFilter=wx;
+    document.querySelectorAll('.filter-btn[id^="fb-"]').forEach(b=>b.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy'));
+    btn.classList.add('active','wx-active-'+wx);
+    renderGrid();
+  }
+}
+
+function autoDetectWxFallback(){
+  const month=new Date().getMonth();
+  const season=month<=1||month===11?'winter':month<=4?'spring':month<=7?'summer':'fall';
+  // Use season-based weather simulation (wx presets removed)
+  const seasonWx={winter:['snowy','cloudy'],fall:['sunny','cloudy'],spring:['sunny','rainy'],summer:['sunny','rainy','cloudy']};
+  const options=seasonWx[season]||['sunny'];
+  const wx=options[Math.floor(Math.random()*options.length)];
+  // Simulate plausible temperature for city/season
+  const baseTempMap={
+    winter:{min:-2,max:6}, fall:{min:10,max:18},
+    spring:{min:12,max:20}, summer:{min:24,max:32}
+  };
+  const range=baseTempMap[season];
+  const temp=Math.round(range.min + Math.random()*(range.max-range.min));
+  liveWeatherData={temp, code:0, wx, simulated:true};
+  showWeatherUI(temp,wx);
+  applyWxToApp(wx);
+  maybeShowTodayPopup();
+}
+
+function autoDetectWx(){ fetchWeather(); }
+
+// ══════════════════════════════
+//  TODAY POPUP
+// ══════════════════════════════
+function maybeShowTodayPopup(){
+  const todayStr = new Date().toDateString();
+  const lastShown = localStorage.getItem('lookbook_popup_shown');
+  if(lastShown === todayStr) return; // already shown today
+  setTimeout(()=>{
+    openTodayPopup();
+    localStorage.setItem('lookbook_popup_shown', todayStr);
+  }, 600); // slight delay so app finishes loading first
+}
+
+function openTodayPopup(){
+  renderTodayPopupContent();
+  openModal('today-popup');
+}
+
+function renderTodayPopupContent(look){
+  if(!look) look = getSmartReco();
+  const body = document.getElementById('today-popup-body');
+  const title = document.getElementById('today-popup-title');
+  const wx = todayWx;
+  const wm = WM[wx] || {};
+
+  // Update title with temp if available
+  if(liveWeatherData){
+    const sim = liveWeatherData.simulated ? ' (추정)' : '';
+    title.textContent = `${t('todays_look_title')}  ${toDisplayTemp(liveWeatherData.temp)}${unitLabel()}`;
+  }
+
+  if(!look){
+    body.innerHTML = `<div class="popup-empty">${t("popup_empty")}</div>`;
+    return;
+  }
+
+  const sm = SM[look.season] || {};
+  const worn = wornToday.includes(look.id);
+  const dots = (look.colors||[]).map(cid=>{
+    const col = COLORS.find(x=>x.id===cid);
+    return col ? `<div class="popup-color-dot" style="background:${col.hex}" title="${col.label}"></div>` : '';
+  }).join('');
+  const vibes = (look.vibes||[]).map(v=>`<span class="popup-vibe">${v}</span>`).join('');
+
+  // Build reason
+  let reason = '', sub = '';
+  if(liveWeatherData){
+    const temp = liveWeatherData.temp;
+    if(temp <= 0)       { reason='오늘 매우 춥네요';         sub=`${toDisplayTemp(temp)}${unitLabel()} — 두꺼운 패딩이나 코트를 꼭 챙기세요`; }
+    else if(temp <= 5)  { reason='쌀쌀한 날이에요';          sub=`${toDisplayTemp(temp)}${unitLabel()} — 겨울 아우터가 필요한 날씨예요`; }
+    else if(temp <= 10) { reason='선선해요';                  sub=`${toDisplayTemp(temp)}${unitLabel()} — 얇은 겉옷 하나 챙기면 좋아요`; }
+    else if(temp <= 15) { reason='기온이 포근해요';           sub=`${toDisplayTemp(temp)}${unitLabel()} — 레이어링하기 딱 좋은 날씨`; }
+    else if(temp <= 20) { reason='봄/가을 날씨예요';          sub=`${toDisplayTemp(temp)}${unitLabel()} — 라이트 착장으로 여유롭게`; }
+    else if(temp <= 25) { reason='따뜻하고 좋은 날씨예요';    sub=`${toDisplayTemp(temp)}${unitLabel()} — 가볍게 입어도 충분해요`; }
+    else                { reason='더운 날이에요';             sub=`${toDisplayTemp(temp)}${unitLabel()} — 시원하고 통기성 좋은 착장 추천`; }
+    
+  } else {
+    reason = `${sm.emoji} ${sm.label} 착장을 추천해요`;
+    sub = look.date ? `마지막 착용: ${look.date}` : '';
+  }
+
+  const htags = (look.hashtags||[]).slice(0,3).map(h=>`<span class="htag-pill">#${h}</span>`).join('');
+  const imgHtml = look.photo
+    ? `<img src="${look.photo}" alt="">`
+    : `<div class="popup-no-photo">${sm.emoji||'👗'}</div>`;
+
+  body.innerHTML = `
+    <div class="today-popup-card">
+      <div class="today-popup-img" id="popup-img-wrap" onclick="openDetail('${look.id}');closeModal('today-popup')">
+        ${imgHtml}
+        <div class="popup-img-overlay">${t('view_detail')}</div>
+      </div>
+      <div class="today-popup-info">
+        <div class="popup-wx-row">
+          <span class="popup-info-pill tag ${sm.tag}">${sm.emoji} ${t(look.season||'spring')}</span>
+          ${wm.emoji ? `<span class="popup-info-pill" style="background:var(--${wx==='sunny'?'sunny':wx==='cloudy'?'cloudy':wx==='rainy'?'rainy':'snowy'}-bg);color:var(--${wx==='sunny'?'sunny':wx==='cloudy'?'cloudy':wx==='rainy'?'rainy':'snowy'}-fg)">${wm.emoji} ${t(wx)}</span>` : ''}
+          ${liveWeatherData ? `<span class="popup-info-pill" style="background:var(--accent-light);color:var(--text-secondary)">${toDisplayTemp(liveWeatherData.temp)}${unitLabel()}</span>` : ''}
+        </div>
+        <div class="popup-reason">${reason}</div>
+        <div class="popup-sub">${sub}</div>
+        ${(dots||vibes) ? `<div class="popup-meta">${dots}${vibes}</div>` : ''}
+        ${htags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px">${htags}</div>` : ''}
+        <div class="popup-actions">
+          <button class="popup-worn-btn ${worn?'worn':''}" onclick="toggleWornPopup('${look.id}',this)">
+            ${worn ? `✓ ${t('worn_today')}` : `◎ ${t('worn_today')}`}
+          </button>
+          <button class="popup-random-btn" onclick="closeModal('today-popup');openRandom()">✦ 랜덤 뽑기</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getNextReco(excludeId){
+  if(!looks.length) return null;
+  const wx = todayWx;
+  const month = new Date().getMonth();
+  const season = month<=1||month===11?'winter':month<=4?'spring':month<=7?'summer':'fall';
+  const worn = JSON.parse(localStorage.getItem('lookbook_worn_'+new Date().toDateString())||'[]');
+  let pool = looks.filter(l=>l.id!==excludeId&&!worn.includes(l.id));
+  let best = pool.filter(l=>l.weather===wx&&l.season===season);
+  if(!best.length) best = pool.filter(l=>l.weather===wx);
+  if(!best.length) best = pool.filter(l=>l.season===season);
+  if(!best.length) best = pool;
+  if(!best.length) best = looks.filter(l=>l.id!==excludeId);
+  if(!best.length) return null;
+  return best[Math.floor(Math.random()*best.length)];
+}
+
+function toggleWornPopup(id, btn){
+  if(wornToday.includes(id)){ wornToday=wornToday.filter(x=>x!==id); }
+  else { wornToday.push(id); showToast(t('worn_marked')); }
+  localStorage.setItem('lookbook_worn_'+todayKey, JSON.stringify(wornToday));
+  const isWorn = wornToday.includes(id);
+  btn.className = 'popup-worn-btn' + (isWorn?' worn':'');
+  btn.textContent = isWorn ? `✓ ${t('worn_today')}` : `◎ ${t('worn_today')}`;
+  renderGrid();
+  renderSmartReco();
+}
+
+// ══════════════════════════════
+//  SMART RECOMMENDATION
+// ══════════════════════════════
+function getSmartReco(){
+  if(!looks.length) return null;
+  const wx=todayWx;
+  const now=new Date();
+  const month=now.getMonth();
+  const season=month<=1||month===11?'winter':month<=4?'spring':month<=7?'summer':'fall';
+  // 1. exact match: same weather & season, not worn recently
+  const recentWorn=JSON.parse(localStorage.getItem('lookbook_worn_'+now.toDateString())||'[]');
+  const notWornToday=looks.filter(l=>!recentWorn.includes(l.id));
+  // 2. match weather first
+  let pool=notWornToday.filter(l=>l.weather===wx&&l.season===season);
+  if(!pool.length) pool=notWornToday.filter(l=>l.weather===wx);
+  if(!pool.length) pool=notWornToday.filter(l=>l.season===season);
+  if(!pool.length) pool=notWornToday;
+  if(!pool.length) pool=looks;
+  // 3. prefer least-recently worn (by date desc, pick from bottom)
+  const sorted=[...pool].sort((a,b)=>{
+    const da=a.date?new Date(a.date).getTime():0;
+    const db=b.date?new Date(b.date).getTime():0;
+    return da-db; // oldest first = least recently worn
+  });
+  return sorted[0]||null;
+}
+
+function renderSmartReco(){ /* hero removed */ }
+function toggleWornHero(id,btn){
+  if(wornToday.includes(id)){wornToday=wornToday.filter(x=>x!==id);}
+  else{wornToday.push(id);showToast(t('worn_marked'));}
+  localStorage.setItem('lookbook_worn_'+todayKey,JSON.stringify(wornToday));
+  const isWorn=wornToday.includes(id);
+  btn.className='worn-today-btn '+(isWorn?'worn'+'':'')+' ';
+  btn.className=btn.className.trim();
+  if(isWorn) btn.classList.add('worn');
+  btn.style.width='auto'; btn.style.padding='7px 14px';
+  btn.textContent=(isWorn?'✓ ':' ◎ ')+t('worn_today');
+  renderGrid();
+}
+
+function refreshReco(){ renderSmartReco(); }
+
+// ══════════════════════════════
+//  TABS
+// ══════════════════════════════
+function openTab(name){
+  if(name==='stats') setTimeout(renderStats, 50);
+  // tabs in tab bar (settings no longer has a tab button)
+  ['looks','stats'].forEach(tabName=>{
+    const tb=document.getElementById(`tab-${tabName}`); if(tb) tb.classList.toggle('active',tabName===name);
+  });
+  // all panels including premium and settings
+  ['looks','stats','premium','settings'].forEach(tabName=>{
+    const pn=document.getElementById('panel-'+tabName); if(pn) pn.classList.toggle('active',tabName===name);
+  });
+  if(name==='stats') renderStats();
+  if(name==='settings'){ const _sc=document.getElementById('settings-count-sub'); if(_sc) _sc.textContent=`${looks.length}${curLang==='en'?' looks':curLang==='ja'?' コーデ':curLang==='zh'?' 套':'개'}`; }
+}
+
+// ══════════════════════════════
+//  FILTER
+// ══════════════════════════════
+function sidebarSeasonFilter(btn, s){
+  seasonFilter = s;
+  wxFilter = null;
+  document.querySelectorAll('.sidebar .filter-btn[id^="sb-"]').forEach(b => {
+    b.classList.remove('active','season-active-spring','season-active-summer','season-active-fall','season-active-winter');
+  });
+  btn.classList.add(`season-active-${s}`);
+  const allBtn = document.getElementById('fb-all');
+  document.querySelectorAll('.sidebar .filter-btn[id^="fb-"]').forEach(b => b.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy'));
+  if(allBtn) allBtn.classList.add('active');
+  ['spring','summer','fall','winter'].forEach(sn => {
+    const el = document.getElementById(`drw-${sn}`);
+    if(el){ el.classList.remove('active','season-active-spring','season-active-summer','season-active-fall','season-active-winter'); if(sn===s) el.classList.add(`season-active-${sn}`); }
+  });
+  openTab('looks'); renderGrid(); updateTitle(); updateCounts();
+}
+function setWxFilter(btn,wx){
+  wxFilter = (wx==='all') ? null : wx;
+  document.querySelectorAll('.sidebar .filter-btn[id^="fb-"]').forEach(b => b.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy'));
+  if(wx==='all') btn.classList.add('active');
+  else btn.classList.add('active', `wx-active-${wx}`);
+  openTab('looks'); renderGrid(); updateTitle(); updateCounts();
+}
+function setSeasonFilter(btn,s){
+  seasonFilter=s;
+  document.querySelectorAll('.sidebar .filter-btn:not([id^="fb-"])').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  openTab('looks'); renderGrid(); updateTitle();
+}
+function setSeasonFilterByName(s){
+  seasonFilter = s;
+  // Update sidebar active state
+  document.querySelectorAll('.sidebar .filter-btn:not([id^="fb-"])').forEach(b=>b.classList.remove('active'));
+  const map = {spring:'d-spring', summer:'d-summer', fall:'d-fall', winter:'d-winter'};
+  const dotClass = map[s];
+  if(dotClass){
+    const btn = document.querySelector(`.sidebar .filter-btn .${dotClass}`);
+    if(btn) btn.closest('.filter-btn').classList.add('active');
+  }
+  // Update drawer season buttons
+  ['spring','summer','fall','winter'].forEach(sn => {
+    const el = document.getElementById(`drw-${sn}`);
+    if(el) el.classList.toggle('active', sn === s);
+  });
+  renderGrid(); updateTitle();
+}
+
+function getCurrentSeason(){
+  const m = new Date().getMonth(); // 0-11
+  if(m >= 2 && m <= 4) return 'spring';   // Mar-May
+  if(m >= 5 && m <= 7) return 'summer';   // Jun-Aug
+  if(m >= 8 && m <= 10) return 'fall';    // Sep-Nov
+  return 'winter';                         // Dec-Feb
+}
+function formatDate(dateStr){
+  if(!dateStr) return '';
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const lang = curLang || 'en';
+    if(lang === 'ko') return `${y}년 ${m}월 ${d}일`;
+    if(lang === 'ja' || lang === 'zh') return `${y}年${m}月${d}日`;
+    // en — May 11, 2026
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[m-1]} ${d}, ${y}`;
+  } catch(e){ return dateStr; }
+}
+
+function getAllTags(){
+  const map = {};
+  looks.forEach(l => (l.hashtags||[]).forEach(h => { map[h] = (map[h]||0)+1; }));
+  return Object.entries(map).sort((a,b) => b[1]-a[1]);
+}
+
+function getFiltered(){
+  let list=[...looks];
+  if(seasonFilter!=='all') list=list.filter(l=>l.season===seasonFilter);
+  if(wxFilter) list=list.filter(l=>l.weather===wxFilter);
+  return list;
+}
+function updateTitle(){
+  const el=document.getElementById('page-title'); if(!el) return;
+  const sm = SM[seasonFilter] || SM.spring;
+  if(wxFilter){
+    const wm = WM[wxFilter];
+    el.innerHTML=`${sm.emoji} <em>${t(seasonFilter)}</em> <span style="font-size:.6em;opacity:.6;font-style:normal">·</span> ${wm.emoji} <em style="font-size:.75em">${t(wxFilter)}</em>`;
+  } else {
+    el.innerHTML=`${sm.emoji} <em>${t(seasonFilter)}</em>`;
+  }
+}
+
+// ══════════════════════════════
+//  TODAY HERO (legacy stubs — real logic in fetchWeather)
+// ══════════════════════════════
+function setTodayWx(wx){ applyWxToApp(wx); closeModal('wx-modal'); }
+
+// ══════════════════════════════
+//  GRID RENDER
+// ══════════════════════════════
+function renderGrid(){
+  const grid=document.getElementById('grid');
+  const list=getFiltered();
+  const _rc=document.getElementById('result-count'); if(_rc) _rc.textContent=`${list.length} outfit${list.length!==1?'s':''}`;
+  updateCounts();
+  if(!list.length){ grid.innerHTML=`<div class="empty-state"><div class="eico">🪞</div><p>${t('no_looks')}</p><small>${t('add_first')}</small></div>`; return; }
+  grid.innerHTML=list.map((l,i)=>cardHtml(l,i)).join('');
+}
+
+function cardHtml(look,i){
+  const sm=SM[look.season]||SM['spring']||{};
+  const wm=WM[look.weather]||{emoji:'',cls:''};
+  const worn=wornToday.includes(look.id);
+  const imgHtml=look.photo
+    ?`<div class="card-img-wrap"><img src="${look.photo}" alt="" loading="lazy">${worn?`<span class="card-worn-today">✓ ${t('worn_today')}</span>`:''}</div>`
+    :`<div class="card-no-photo">${sm.emoji||'👗'}<span>No Photo</span></div>`;
+  const dots=(look.colors||[]).map(cid=>{ const c=COLORS.find(x=>x.id===cid); return c?`<div class="color-dot" style="background:${c.hex};${c.border?'border-color:'+c.border:''}" title="${c.label}"></div>`:''; }).join('');
+  const vibeText=(look.vibes||[]).join(' · ');
+  const htags=(look.hashtags||[]).slice(0,2).map(h=>`<span class="htag-pill" onclick="event.stopPropagation();filterByHtag('${h}')">#${h}</span>`).join('');
+  return `
+    <div class="look-card" style="animation-delay:${i*40}ms" onclick="openDetail('${look.id}')">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-tags">
+          <span class="tag ${sm.tag||'tag-spring'}">${sm.emoji||'🌸'} ${t(look.season||'spring')}</span>
+          ${look.weather?`<span class="wbadge ${wm.cls||'wb-sunny'}">${wm.emoji||'☀️'} ${t(look.weather)}</span>`:''}
+        </div>
+        <div class="card-date">${formatDate(look.date)}</div>
+      </div>
+      <div class="card-worn-row">
+        <button class="worn-today-btn ${worn?'worn':''}" onclick="event.stopPropagation();toggleWorn('${look.id}',this)">
+          ${worn?`✓ ${t('worn_today')}`:`◎ ${t('worn_today')}`}
+        </button>
+      </div>
+    </div>`;
+}
+
+function updateCounts(){
+  const _ca=document.getElementById('cnt-all'); if(_ca) _ca.textContent=looks.length;
+  ['spring','summer','fall','winter'].forEach(s=>{const el=document.getElementById(`cnt-${s}`);if(el)el.textContent=looks.filter(l=>l.season===s).length;});
+  ['sunny','cloudy','rainy','snowy'].forEach(w=>{const el=document.getElementById(`cnt-${w}`);if(el)el.textContent=looks.filter(l=>l.weather===w).length;});
+  if(typeof syncDrawerCounts==='function') syncDrawerCounts();
+}
+
+// ══════════════════════════════
+//  WORN TODAY
+// ══════════════════════════════
+function toggleWorn(id,btn){
+  if(wornToday.includes(id)){ wornToday=wornToday.filter(x=>x!==id); }
+  else { wornToday.push(id); showToast(t('worn_marked')); }
+  localStorage.setItem('lookbook_worn_'+todayKey,JSON.stringify(wornToday));
+  btn.classList.toggle('worn',wornToday.includes(id));
+  btn.textContent=wornToday.includes(id)?`✓ ${t('worn_today')}`:`◎ ${t('worn_today')}`;
+  renderGrid();
+}
+
+// ══════════════════════════════
+//  STATS
+// ══════════════════════════════
+// ══════════════════════════════
+//  STATS — Period-based
+// ══════════════════════════════
+let statsPeriod = 'month'; // 'week' | 'month' | 'season'
+
+function setStatsPeriod(period, btn){
+  statsPeriod = period;
+  document.querySelectorAll('.stats-period-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderStats();
+}
+
+function getStatsLooks(){
+  const now = new Date();
+  if(statsPeriod === 'week'){
+    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+    return looks.filter(l => l.date && new Date(l.date) >= weekAgo);
+  }
+  if(statsPeriod === 'month'){
+    return looks.filter(l => {
+      if(!l.date) return false;
+      const d = new Date(l.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  }
+  if(statsPeriod === 'season'){
+    const s = getCurrentSeason();
+    return looks.filter(l => l.season === s);
+  }
+  return looks;
+}
+
+function getPeriodLabel(){
+  const now = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(statsPeriod === 'week') return 'This Week';
+  if(statsPeriod === 'month') return `${months[now.getMonth()]} ${now.getFullYear()}`;
+  if(statsPeriod === 'season') return getCurrentSeason().charAt(0).toUpperCase() + getCurrentSeason().slice(1);
+  return '';
+}
+
+function renderStats(){
+  const container = document.getElementById('stats-content');
+  if(!container) return;
+
+  const periodLooks = getStatsLooks();
+  const label = getPeriodLabel();
+
+  if(looks.length === 0){
+    container.innerHTML = '<div class="stat-empty">Add your first look to see stats ✦</div>';
+    return;
+  }
+
+  // ── Helper: count occurrences ──
+  function countBy(arr, key){
+    const map = {};
+    arr.forEach(l => {
+      const vals = Array.isArray(l[key]) ? l[key] : [l[key]];
+      vals.forEach(v => { if(v) map[v] = (map[v]||0) + 1; });
+    });
+    return Object.entries(map).sort((a,b) => b[1]-a[1]);
+  }
+
+  // ── 1. KEY NUMBERS ──
+  const prevPeriod = statsPeriod === 'month' ? (() => {
+    const now = new Date(); const prev = new Date(now);
+    prev.setMonth(prev.getMonth()-1);
+    return looks.filter(l => { if(!l.date) return false; const d=new Date(l.date); return d.getMonth()===prev.getMonth()&&d.getFullYear()===prev.getFullYear(); });
+  })() : [];
+  const newLooks = periodLooks.length;
+  const wornCount = periodLooks.filter(l => wornToday.includes(l.id)).length;
+  const totalAll = looks.length;
+
+  // ── 2. STYLE DNA ──
+  const vibeCount = countBy(periodLooks.length > 0 ? periodLooks : looks, 'vibes');
+  const total_vibes = vibeCount.reduce((s,[,n]) => s+n, 0);
+  const top3vibes = vibeCount.slice(0,3);
+  const dnaLabel = top3vibes.length > 0
+    ? top3vibes.slice(0,2).map(([v])=>v).join(' + ')
+    : '—';
+
+  const dnaHTML = top3vibes.length > 0
+    ? top3vibes.map(([vibe, cnt]) => {
+        const pct = total_vibes > 0 ? Math.round(cnt/total_vibes*100) : 0;
+        return `<div class="stat-dna-row">
+          <span class="stat-dna-name">${vibe}</span>
+          <div class="stat-dna-bar-wrap"><div class="stat-dna-bar" style="width:${pct}%"></div></div>
+          <span class="stat-dna-pct">${pct}%</span>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text-muted);font-size:12px">No data yet</div>';
+
+  // ── 3. COLOR PALETTE ──
+  const colorCount = countBy(periodLooks.length > 0 ? periodLooks : looks, 'colors');
+  const top5colors = colorCount.slice(0,5);
+  const colorDotsHTML = top5colors.map(([cid]) => {
+    const col = COLORS.find(x => x.id === cid);
+    if(!col) return '';
+    return `<div class="stat-color-dot" style="background:${col.hex};${col.border?'border-color:'+col.border:'border-color:transparent'}" title="${col.label}"></div>`;
+  }).join('');
+
+  // ── 4. MOST LOVED LOOK ──
+  const wornMap = {};
+  looks.forEach(l => {
+    const key = 'lookbook_worn_count_' + l.id;
+    wornMap[l.id] = parseInt(localStorage.getItem(key)||'0');
+  });
+  const sortedByWorn = [...(periodLooks.length > 0 ? periodLooks : looks)]
+    .sort((a,b) => (wornMap[b.id]||0) - (wornMap[a.id]||0));
+  const mostLoved = sortedByWorn[0];
+  const mostLovedWorn = mostLoved ? (wornMap[mostLoved.id]||0) : 0;
+  // Fallback: just pick first look if no worn data
+  const featuredLook = mostLoved || (periodLooks.length > 0 ? periodLooks[0] : looks[0]);
+  const featuredSm = SM[featuredLook?.season] || SM.spring;
+
+  const lovedHTML = featuredLook ? `
+    <div class="stat-love-card" onclick="openDetail('${featuredLook.id}')">
+      ${featuredLook.photo
+        ? `<img class="stat-love-thumb" src="${featuredLook.photo}" alt="">`
+        : `<div class="stat-love-thumb-empty">${featuredSm.emoji}</div>`}
+      <div class="stat-love-info">
+        <div class="stat-love-title">${featuredSm.emoji} ${t(featuredLook.season)} · ${featuredLook.date||'—'}</div>
+        <div class="stat-love-sub">${(featuredLook.vibes||[]).join(' · ')||'No vibe tag'}</div>
+        <div style="margin-top:6px;display:flex;gap:4px">
+          ${(featuredLook.colors||[]).slice(0,3).map(cid => {
+            const col = COLORS.find(x=>x.id===cid);
+            return col ? `<div style="width:14px;height:14px;border-radius:50%;background:${col.hex};border:1px solid var(--border)"></div>` : '';
+          }).join('')}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);text-align:right;flex-shrink:0">
+        <div style="font-size:20px">♡</div>
+        <div>Tap to view</div>
+      </div>
+    </div>` : '<div class="stat-empty">No looks yet</div>';
+
+  // ── 5. SEASON MOOD CHANGE ──
+  const seasonOrder = ['spring','summer','fall','winter'];
+  const moodBySeasonHTML = seasonOrder.map(s => {
+    const sLooks = looks.filter(l => l.season === s);
+    const topVibe = countBy(sLooks, 'vibes')[0];
+    const sm2 = SM[s];
+    return `<div class="stat-mood-chip ${sLooks.length===0?'':''}">
+      <div class="stat-mood-season">${sm2.emoji}</div>
+      <div class="stat-mood-name">${t(s)}</div>
+      <div class="stat-mood-vibe">${topVibe ? topVibe[0] : '—'}</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${sLooks.length} looks</div>
+    </div>`;
+  }).join('');
+
+  // ── 6. WEATHER TYPE ──
+  const wxCount = countBy(periodLooks.length > 0 ? periodLooks : looks, 'weather');
+  const topWx = wxCount[0];
+  const wxEmojis = {sunny:'☀️',cloudy:'☁️',rainy:'🌧️',snowy:'❄️'};
+  const wxPersonas = {
+    sunny: 'Sunny Dresser ☀️',
+    cloudy: 'Cloudy Cool 🌤️',
+    rainy: 'Rainy Chic 🌧️',
+    snowy: 'Winter Lover ❄️'
+  };
+  const totalWxLooks = wxCount.reduce((s,[,n])=>s+n,0);
+  const topWxPct = topWx && totalWxLooks > 0 ? Math.round(topWx[1]/totalWxLooks*100) : 0;
+  const wxHTML = topWx ? `
+    <div class="stat-wx-type">
+      <div class="stat-wx-emoji">${wxEmojis[topWx[0]]||'🌈'}</div>
+      <div>
+        <div class="stat-wx-title">${wxPersonas[topWx[0]]||topWx[0]}</div>
+        <div class="stat-wx-sub">${topWxPct}% of ${label} looks</div>
+      </div>
+    </div>` : '<div style="color:var(--text-muted);font-size:12px;padding:12px">No data yet</div>';
+
+  // ── 7. STREAK (total all-time) ──
+  const allDates = [...new Set(looks.filter(l=>l.date).map(l=>l.date))].sort();
+  let streak = 0, maxStreak = 0, cur = 0;
+  for(let i = 0; i < allDates.length; i++){
+    if(i === 0){ cur = 1; }
+    else {
+      const diff = (new Date(allDates[i]) - new Date(allDates[i-1])) / 86400000;
+      cur = diff <= 1 ? cur + 1 : 1;
+    }
+    maxStreak = Math.max(maxStreak, cur);
+  }
+
+  // ── 8. TOP HASHTAGS ──
+  const htagCount = {};
+  (periodLooks.length > 0 ? periodLooks : looks).forEach(l => {
+    (l.hashtags||[]).forEach(h => { htagCount[h] = (htagCount[h]||0)+1; });
+  });
+  const topHtags = Object.entries(htagCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const htagHTML = topHtags.length > 0
+    ? topHtags.map(([tag])=>`<span class="stat-htag-pill">#${tag}</span>`).join('')
+    : '<span style="color:var(--text-muted);font-size:12px">No tags yet</span>';
+
+  // ── RENDER ──
+  container.innerHTML = `
+    <!-- Key Numbers -->
+    <div class="stat-section">
+      <div class="stat-number-row">
+        <div class="stat-number-card">
+          <div class="stat-number-value">${newLooks}</div>
+          <div class="stat-number-label">${label} Looks</div>
+        </div>
+        <div class="stat-number-card">
+          <div class="stat-number-value">${totalAll}</div>
+          <div class="stat-number-label">Total</div>
+        </div>
+        <div class="stat-number-card">
+          <div class="stat-number-value">${maxStreak}</div>
+          <div class="stat-number-label">Day Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style DNA -->
+    <div class="stat-section">
+      <div class="stat-section-title">✦ My Style DNA</div>
+      <div class="stat-dna-card">
+        <div class="stat-dna-label">${dnaLabel}</div>
+        <div class="stat-dna-bars">${dnaHTML}</div>
+        ${colorDotsHTML ? `<div style="margin-top:14px"><div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">COLOR PALETTE</div><div class="stat-color-dots">${colorDotsHTML}</div></div>` : ''}
+      </div>
+    </div>
+
+    <!-- Most Loved Look -->
+    <div class="stat-section">
+      <div class="stat-section-title">♡ Most Loved Look</div>
+      ${lovedHTML}
+    </div>
+
+    <!-- Season Mood Change -->
+    <div class="stat-section">
+      <div class="stat-section-title">🌿 Season Mood</div>
+      <div class="stat-mood-row">${moodBySeasonHTML}</div>
+    </div>
+
+    <!-- Weather Type -->
+    <div class="stat-section">
+      <div class="stat-section-title">☁️ Weather Type</div>
+      ${wxHTML}
+    </div>
+
+    <!-- Top Hashtags -->
+    ${topHtags.length > 0 ? `<div class="stat-section">
+      <div class="stat-section-title"># Top Tags</div>
+      <div class="stat-htag-row">${htagHTML}</div>
+    </div>` : ''}
+  `;
+}
+
+
+function renderHtagPanel(){
+  const searchEl = document.getElementById('htag-search');
+  const cloudEl  = document.getElementById('htag-cloud');
+  if(!cloudEl) return; // panel not in DOM yet
+  const search = (searchEl ? searchEl.value||'' : '').toLowerCase().replace(/^#/,'');
+  const all=getAllTags();
+  const filtered=search?all.filter(([tagName])=>tagName.toLowerCase().includes(search)):all;
+  cloudEl.innerHTML=filtered.length
+    ?filtered.map(([tag,cnt])=>`<div class="htag-cloud-item ${activeHtag===tag?'active':''}" onclick="toggleHtagFilter('${tag}')"><span class="htag-name">#${tag}</span><span class="htag-cnt">${cnt}</span></div>`).join('')
+    :`<span style="font-size:13px;color:var(--text-muted);font-style:italic">${t('no_tags')}</span>`;
+  const label=document.getElementById('htag-results-label');
+  const grid=document.getElementById('htag-grid');
+  if(activeHtag){
+    const results=looks.filter(l=>(l.hashtags||[]).includes(activeHtag));
+    if(label){ label.style.display=''; label.textContent=`#${activeHtag} — ${results.length}`; }
+    if(grid) grid.innerHTML=results.length?results.map((l,i)=>cardHtml(l,i)).join(''):`<div class="empty-state" style="grid-column:1/-1"><div class="eico">🏷</div><p>${t('no_looks')}</p></div>`;
+  } else {
+    if(label) label.style.display='none';
+    if(grid) grid.innerHTML='';
+  }
+}
+
+// ══════════════════════════════
+//  COLOR / VIBE PICKERS
+// ══════════════════════════════
+function buildColorPicker(){
+  document.getElementById('color-picker').innerHTML=COLORS.map(c=>`
+    <div class="color-swatch ${selColors.includes(c.id)?'sel':''}" data-cid="${c.id}" style="background:${c.hex};border:2px solid ${c.border||'transparent'}" title="${c.label}" onclick="toggleColor('${c.id}',this)"></div>
+  `).join('');
+}
+function toggleColor(id,el){
+  if(selColors.includes(id)){ selColors=selColors.filter(x=>x!==id); el.classList.remove('sel'); }
+  else if(selColors.length<3){ selColors.push(id); el.classList.add('sel'); }
+}
+function buildVibePicker(){
+  document.getElementById('vibe-picker').innerHTML=VIBES.map(v=>`<button class="vibe-chip ${selVibes.includes(v)?'sel':''}" onclick="toggleVibe('${v}',this)">${v}</button>`).join('');
+}
+function toggleVibe(v,el){
+  if(selVibes.includes(v)){ selVibes=selVibes.filter(x=>x!==v); el.classList.remove('sel'); }
+  else if(selVibes.length<2){ selVibes.push(v); el.classList.add('sel'); }
+}
+
+// ══════════════════════════════
+//  MODAL / PHOTO / FORM
+// ══════════════════════════════
+function openAddModal(){
+  selPhoto=null;selSeason=null;selWx=null;selHtags=[];selColors=[];selVibes=[];
+  document.getElementById('upload-zone').style.display='block';
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('photo-input').value='';
+  document.getElementById('look-date').value=today();
+  document.getElementById('look-note').value='';
+  document.getElementById('htag-input').value='';
+  document.getElementById('htag-sel-row').innerHTML='';
+  document.querySelectorAll('#season-chips .chip').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('#add-wx .wx-btn').forEach(b=>b.classList.remove('a-sunny','a-cloudy','a-rainy','a-snowy'));
+  document.getElementById('opt-fields').classList.remove('open');
+  document.getElementById('opt-toggle').classList.remove('open');
+  buildColorPicker(); buildVibePicker();
+  // Auto-select current season
+  const curSeason = getCurrentSeason(); // auto
+  selSeason = curSeason;
+  const seasonMap = {spring:0, summer:1, fall:2, winter:3};
+  const seasonChips = document.querySelectorAll('#season-chips .chip');
+  if(seasonChips[seasonMap[curSeason]]) seasonChips[seasonMap[curSeason]].classList.add('sel');
+  // Auto-select today's weather
+  if(todayWx){ const b=document.querySelector(`#add-wx [data-wx="${todayWx}"]`); if(b){selWx=todayWx;b.classList.add(`a-${todayWx}`);} }
+  openModal('add-modal');
+}
+function openModal(id){
+  if(id === 'privacy-modal') renderPrivacyPolicy();
+  document.getElementById(id).classList.add('open');
+}
+
+// ── PRIVACY POLICY — multilingual ──
+const PRIVACY = {
+  en:{
+    title:'Privacy Policy',
+    updated:'Last updated: May 2025',
+    sections:[
+      ['1. Information We Collect',
+       'Closette collects outfit photos, weather info, colors, style tags, and hashtags that you enter. All data is stored only on your device (localStorage) and is never sent to external servers.'],
+      ['2. Location',
+       'To fetch weather, the coordinates (lat/lng) of your selected city are sent to the Open-Meteo API. This is used only for weather lookup and is never stored.'],
+      ['3. Photos',
+       'Uploaded photos are stored only in your browser storage (localStorage). Photos are never uploaded to a server or shared with third parties.'],
+      ['4. Notifications',
+       'The morning reminder feature requests browser notification permission. Denying permission does not affect other app features.'],
+      ['5. Deleting Your Data',
+       'You can delete all data immediately via Settings → Delete All. Deleted data cannot be recovered.'],
+      ['6. Third-Party Services',
+       'Weather: Open-Meteo (open-meteo.com) — free open-source weather API. Fonts: Google Fonts — used to load design fonts.'],
+      ['7. Children Privacy',
+       "This app does not knowingly collect personal information from children under 13."],
+      ['8. Contact',
+       "For privacy inquiries, please contact us through the App Store developer contact."]
+    ]
+  },
+  ko:{
+    title:'개인정보 처리방침',
+    updated:'최종 업데이트: 2025년 5월',
+    sections:[
+      ['1. 수집하는 정보',
+       'Closette은 사용자가 직접 입력한 착장 사진, 날씨 정보, 색상, 스타일 태그, 해시태그를 수집합니다. 모든 데이터는 사용자의 기기(localStorage)에만 저장되며, 외부 서버로 전송되지 않습니다.'],
+      ['2. 위치 정보',
+       '날씨 정보를 위해 사용자가 선택한 도시의 위치 좌표(위도/경도)를 Open-Meteo API에 전송합니다. 이 정보는 날씨 조회 목적으로만 사용되며 저장되지 않습니다.'],
+      ['3. 사진 데이터',
+       '업로드된 사진은 기기 내 브라우저 저장소(localStorage)에만 보관됩니다. 사진은 서버에 업로드되거나 제3자와 공유되지 않습니다.'],
+      ['4. 알림',
+       '아침 알림 기능은 브라우저 알림 권한을 요청합니다. 알림 권한을 거부하셔도 앱의 다른 기능은 정상 작동합니다.'],
+      ['5. 데이터 삭제',
+       '설정 → 전체 삭제를 통해 모든 데이터를 즉시 삭제할 수 있습니다. 앱 데이터 삭제 시 복구가 불가능합니다.'],
+      ['6. 제3자 서비스',
+       '날씨 데이터: Open-Meteo (open-meteo.com) — 무료 오픈소스 날씨 API. 폰트: Google Fonts — 디자인 폰트 로드에 사용.'],
+      ['7. 어린이 개인정보',
+       '본 앱은 13세 미만 아동으로부터 의도적으로 개인정보를 수집하지 않습니다.'],
+      ['8. 문의',
+       '개인정보 처리와 관련한 문의사항은 앱 스토어 개발자 연락처를 통해 문의해 주세요.']
+    ]
+  },
+  ja:{
+    title:'プライバシーポリシー',
+    updated:'最終更新：2025年5月',
+    sections:[
+      ['1. 収集する情報',
+       'Closetteは、コーデの写真、天気情報、色、スタイルタグ、ハッシュタグを収集します。すべてのデータはお使いの端末（localStorage）にのみ保存され、外部サーバーには送信されません。'],
+      ['2. 位置情報',
+       '天気情報を取得するために、選択した都市の緯度・経度をOpen-Meteo APIに送信します。これは天気確認のみに使用され、保存されません。'],
+      ['3. 写真データ',
+       'アップロードした写真はブラウザのストレージ（localStorage）にのみ保存されます。写真がサーバーにアップロードされたり、第三者と共有されることはありません。'],
+      ['4. 通知',
+       'モーニングリマインダー機能はブラウザの通知権限をリクエストします。権限を拒否しても、他の機能は正常に動作します。'],
+      ['5. データの削除',
+       '設定→全削除から、すべてのデータを即時削除できます。削除したデータは復元できません。'],
+      ['6. サードパーティサービス',
+       '天気：Open-Meteo（open-meteo.com）— 無料オープンソース天気API。フォント：Google Fonts — デザインフォントに使用。'],
+      ['7. 子どものプライバシー',
+       '本アプリは13歳未満の子どもから意図的に個人情報を収集しません。'],
+      ['8. お問い合わせ',
+       'プライバシーに関するお問い合わせは、App Storeの開発者連絡先からご連絡ください。']
+    ]
+  },
+  zh:{
+    title:'隐私政策',
+    updated:'最后更新：2025年5月',
+    sections:[
+      ['1. 收集的信息',
+       'Closette收集您输入的穿搭照片、天气信息、颜色、风格标签和标签。所有数据仅存储在您的设备（localStorage）上，不会发送到外部服务器。'],
+      ['2. 位置信息',
+       '为获取天气，所选城市的坐标（纬度/经度）将发送给Open-Meteo API。此信息仅用于查询天气，不会被保存。'],
+      ['3. 照片数据',
+       '上传的照片仅存储在浏览器存储（localStorage）中，不会上传到服务器或与第三方共享。'],
+      ['4. 通知',
+       '早间提醒功能需要浏览器通知权限。拒绝权限不影响其他功能。'],
+      ['5. 删除数据',
+       '您可以通过设置→全部删除立即删除所有数据。删除后无法恢复。'],
+      ['6. 第三方服务',
+       '天气：Open-Meteo（open-meteo.com）— 免费开源天气API。字体：Google Fonts — 用于加载设计字体。'],
+      ['7. 儿童隐私',
+       '本应用不会故意收集13岁以下儿童的个人信息。'],
+      ['8. 联系方式',
+       '如有隐私相关问题，请通过App Store开发者联系方式与我们联系。']
+    ]
+  }
+};
+
+function renderPrivacyPolicy(){
+  const lang = curLang || 'en';
+  const pp = PRIVACY[lang] || PRIVACY.en;
+  const title = document.getElementById('pp-title');
+  const body  = document.getElementById('pp-body');
+  if(title) title.textContent = pp.title;
+  if(body){
+    body.innerHTML =
+      '<p style="margin-bottom:16px;color:var(--text-muted);font-size:12px">' + pp.updated + '</p>' +
+      pp.sections.map(([h,p]) =>
+        '<p style="font-weight:500;color:var(--text-primary);margin-bottom:6px">' + h + '</p>' +
+        '<p style="margin-bottom:14px">' + p + '</p>'
+      ).join('');
+  }
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+function toggleOpt(){ document.getElementById('opt-fields').classList.toggle('open'); document.getElementById('opt-toggle').classList.toggle('open'); }
+function handlePhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+
+  // Use canvas to resize BEFORE FileReader — works directly on File object
+  createImageBitmap(file).then(bitmap => {
+    // Target: max 800px wide, max 1000px tall, JPEG 72%
+    // This gives ~50-80KB per photo — 50 photos ≈ 3-4MB total, well within 5MB localStorage
+    const MAX_W = 1440, MAX_H = 1800;
+    let w = bitmap.width, h = bitmap.height;
+
+    // Scale down proportionally
+    const ratio = Math.min(MAX_W / w, MAX_H / h, 1); // never upscale
+    w = Math.round(w * ratio);
+    h = Math.round(h * ratio);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+
+    // JPEG at 72% quality — sharp enough for card thumbnails
+    const compressed = canvas.toDataURL('image/jpeg', 0.88);
+
+    selPhoto = compressed;
+    document.getElementById('preview-img').src = selPhoto;
+    document.getElementById('upload-zone').style.display = 'none';
+    document.getElementById('preview-wrap').style.display = '';
+
+  }).catch(() => {
+    // Fallback: FileReader + Image + Canvas (older browsers)
+    const fr = new FileReader();
+    fr.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_W = 1440, MAX_H = 1800;
+        let w = img.width, h = img.height;
+        const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        selPhoto = canvas.toDataURL('image/jpeg', 0.88);
+        document.getElementById('preview-img').src = selPhoto;
+        document.getElementById('upload-zone').style.display = 'none';
+        document.getElementById('preview-wrap').style.display = '';
+      };
+      img.src = ev.target.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function removePhoto(){
+  selPhoto = null;
+  const input = document.getElementById('photo-input');
+  if(input) input.value = '';
+  const wrap = document.getElementById('preview-wrap');
+  if(wrap) wrap.style.display = 'none';
+  const zone = document.getElementById('upload-zone');
+  if(zone) zone.style.display = 'block';
+}
+function pickWx(btn){
+  document.querySelectorAll('#add-wx .wx-btn').forEach(b =>
+    b.classList.remove('a-sunny','a-cloudy','a-rainy','a-snowy'));
+  selWx = btn.dataset.wx;
+  btn.classList.add('a-' + selWx);
+}
+function pickChip(btn, group){
+  // remove sel from all chips in same row
+  const row = btn.closest('[id$="-chips"], .chip-row');
+  if(row) row.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  btn.classList.add('sel');
+  if(group === 'season'){
+    selSeason = mapS(btn.textContent.trim());
+  }
+  if(group === 'rnd'){
+    rndSeason = mapS(btn.textContent.trim()) || 'all';
+    spinRandom();
+  }
+}
+function mapS(t){ if(t.includes('봄')||t.includes('春')||t.includes('Spr')||t.includes('Spring')) return 'spring'; if(t.includes('여름')||t.includes('夏')||t.includes('Sum')) return 'summer'; if(t.includes('가을')||t.includes('秋')||t.includes('Fal')||t.includes('Aut')) return 'fall'; if(t.includes('겨울')||t.includes('冬')||t.includes('Win')) return 'winter'; return null; }
+function addHtag(){ const input=document.getElementById('htag-input'); const raw=input.value.trim().replace(/^#/,''); if(!raw) return; raw.split(/[\s,]+/).map(x=>x.replace(/^#/,'')).filter(Boolean).forEach(tag=>{ if(!selHtags.includes(tag)) selHtags.push(tag); }); input.value=''; renderHtagPills(); }
+function removeSelHtag(tag){ selHtags=selHtags.filter(x=>x!==tag); renderHtagPills(); }
+function renderHtagPills(){ document.getElementById('htag-sel-row').innerHTML=selHtags.map(tag=>`<div class="htag-sel-pill" onclick="removeSelHtag('${tag}')">#${tag}<span>×</span></div>`).join(''); }
+
+// ══════════════════════════════
+//  SAVE
+// ══════════════════════════════
+function saveLook(){
+  try {
+    if(!selSeason){ showToast(t('select_season')); return; }
+    if(!selWx)    { showToast(t('select_weather')); return; }
+
+    looks.unshift({
+      id:Date.now().toString(), photo:selPhoto, season:selSeason, weather:selWx,
+      colors:[...selColors], vibes:[...selVibes], hashtags:[...selHtags],
+      date:document.getElementById('look-date').value,
+      note:document.getElementById('look-note').value.trim(),
+      createdAt:Date.now()
+    });
+
+    try {
+      persist();
+    } catch(storageErr) {
+      // Extremely compressed fallback — reduce to 400px, 50% quality
+      if(looks[0].photo){
+        try {
+          const img2 = new Image();
+          img2.onload = () => {
+            const s = Math.min(400/img2.width, 400/img2.height, 1);
+            const cv = document.createElement('canvas');
+            cv.width = Math.round(img2.width*s);
+            cv.height = Math.round(img2.height*s);
+            cv.getContext('2d').drawImage(img2,0,0,cv.width,cv.height);
+            looks[0].photo = cv.toDataURL('image/jpeg', 0.5);
+            persist();
+            renderGrid();
+            closeModal('add-modal');
+            showToast(t('saved'));
+          };
+          img2.src = looks[0].photo;
+          return; // async, exits here
+        } catch(e2) {
+          looks[0].photo = null;
+          persist();
+          showToast(t('storage_full'));
+          return;
+        }
+      }
+    }
+
+    renderGrid();
+      try { renderStats(); } catch(e){}
+    try { setSeasonFilterByName(selSeason); } catch(e){}
+    closeModal('add-modal');
+    showToast(t('saved'));
+
+  } catch(err) {
+    console.error('saveLook error:', err);
+    showToast('저장 중 오류가 발생했어요: ' + err.message);
+  }
+}
+
+
+function persist(){
+  const data = JSON.stringify(looks);
+  localStorage.setItem('lookbook', data);
+}
+
+// ══════════════════════════════
+//  DETAIL
+// ══════════════════════════════
+function openDetail(id){ const look=looks.find(l=>l.id===id); if(!look) return; renderDetail(look); openModal('detail-modal'); }
+function renderDetail(look){
+  const sm=SM[look.season]||{}, wm=WM[look.weather]||{};
+  const worn=wornToday.includes(look.id);
+  const chips=Object.entries(SM).map(([k,m])=>`<button class="se-chip ${k===look.season?m.se:''}" onclick="changeSeason('${look.id}','${k}')">${m.emoji} ${t(k)}</button>`).join('');
+  const htags=(look.hashtags||[]).map(ht=>`<span class="htag-pill" onclick="filterByHtag('${ht}')">#${ht}</span>`).join('');
+  const dots=(look.colors||[]).map(cid=>{ const c=COLORS.find(x=>x.id===cid); return c?`<div class="detail-color-dot" style="background:${c.hex}" title="${c.label}"></div>`:''; }).join('');
+  const vibes=(look.vibes||[]).join(' · ');
+  document.getElementById('detail-body').innerHTML=`
+    ${look.photo?`<img class="detail-img" src="${look.photo}" alt="">`:`<div class="detail-nophoto">${sm.emoji||'👗'}</div>`}
+    <div class="sublabel">${t('season')}</div>
+    <div class="season-edit-row">${chips}</div>
+    <div class="detail-meta">
+      <span class="tag ${sm.tag}">${sm.emoji} ${sm.label}</span>
+      ${look.weather?`<span class="wbadge ${wm.cls}">${wm.emoji} ${t(look.weather)}</span>`:''}
+      <span class="detail-date">${look.date||''}</span>
+    </div>
+    ${dots?`<div class="detail-colors">${dots}${vibes?`<span style="font-size:11px;color:var(--text-muted);margin-left:6px;font-family:'DM Mono',monospace">${vibes}</span>`:''}</div>`:''}
+    ${htags?`<div class="detail-htags">${htags}</div>`:''}
+    ${look.note?`<p class="detail-note">${look.note}</p>`:''}
+    <div class="detail-actions">
+      <button class="detail-worn-btn ${worn?'worn':''}" id="detail-worn-btn" onclick="toggleWornDetail('${look.id}')">
+        ${worn?`✓ ${t('worn_today')}`:`◎ ${t('worn_today')}`}
+      </button>
+      <button class="btn-del" onclick="deleteLook('${look.id}')">${t('deleted').replace('되었어요','하기').replace('Deleted','Delete').replace('しました','する').replace('已删除','删除')}</button>
+    </div>
+  `;
+}
+function toggleWornDetail(id){
+  if(wornToday.includes(id)){ wornToday=wornToday.filter(x=>x!==id); }
+  else { wornToday.push(id); showToast(t('worn_marked')); }
+  localStorage.setItem('lookbook_worn_'+todayKey,JSON.stringify(wornToday));
+  const look=looks.find(l=>l.id===id); if(look) renderDetail(look);
+  renderGrid();
+}
+function changeSeason(id,newS){
+  const look=looks.find(l=>l.id===id); if(!look||look.season===newS) return;
+  look.season=newS; persist(); renderGrid(); renderDetail(look);
+  showToast(`${SM[newS].emoji} ${SM[newS].label}`);
+}
+function deleteLook(id){
+  if(!confirm(t('confirm_delete'))) return;
+  looks=looks.filter(l=>l.id!==id); persist(); renderGrid(); renderHtagPanel(); renderStats(); renderSmartReco();
+  closeModal('detail-modal'); showToast(t('deleted'));
+}
+
+// ══════════════════════════════
+//  RANDOM + SHUFFLE ANIMATION
+// ══════════════════════════════
+function openRandom(){
+  rndSeason='all';
+  document.querySelectorAll('#rnd-chips .chip').forEach((c,i)=>c.classList.toggle('sel',i===0));
+  // clear previous result
+  const disp=document.getElementById('rnd-display');
+  const strip=document.getElementById('shuffle-strip');
+  if(disp) disp.innerHTML='';
+  if(strip) strip.style.display='none';
+  openModal('random-modal');
+  // auto-spin after modal opens
+  setTimeout(spinRandom, 120);
+}
+
+function spinRandom(){
+  const pool=rndSeason==='all'?looks:looks.filter(l=>l.season===rndSeason);
+  const strip=document.getElementById('shuffle-strip');
+  const film=document.getElementById('shuffle-film');
+  const display=document.getElementById('rnd-display');
+  const spinBtn=document.getElementById('rnd-spin-btn');
+
+  if(!pool.length){
+    if(strip){ strip.style.opacity='0'; setTimeout(()=>{ strip.style.display='none'; }, 300); }
+    if(display) display.innerHTML=`
+      <div style="padding:60px 20px;text-align:center;color:var(--text-muted)">
+        <div style="font-size:40px;margin-bottom:12px">🪞</div>
+        <p style="font-family:'Playfair Display',serif;font-style:italic;font-size:16px">${t('no_looks')}</p>
+      </div>`;
+    return;
+  }
+
+  // Disable spin btn during animation
+  if(spinBtn){ spinBtn.classList.add('spinning'); spinBtn.textContent='뽑는 중…'; }
+  if(display){ display.innerHTML=''; display.style.opacity='1'; }
+
+  // Build shuffle sequence — more frames for more drama (up to 8 + final)
+  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  const frameCount=Math.min(shuffled.length, 8);
+  const frames=shuffled.slice(0,frameCount);
+  const finalPick=pool[Math.floor(Math.random()*pool.length)];
+  // ensure final is last frame
+  frames.push(finalPick);
+
+  if(film){
+    film.innerHTML=frames.map(l=>{
+      const sm=SM[l.season]||{};
+      return l.photo
+        ?`<img class="shuffle-slide" src="${l.photo}" alt="" loading="eager">`
+        :`<div class="shuffle-slide-empty">${sm.emoji||'👗'}</div>`;
+    }).join('');
+  }
+
+  if(strip){ strip.style.display='block'; strip.style.opacity='1'; }
+  if(film){ film.style.transition='none'; film.style.transform='translateX(0)'; }
+
+  // Speed curve: fast start → slow end
+  const intervals=[120,120,120,150,180,220,280,380,500];
+  let frameIdx=0;
+  const total=frames.length;
+
+  function nextSlide(){
+    frameIdx++;
+    if(frameIdx>=total){
+      showFinalLook(finalPick, spinBtn);
+      return;
+    }
+    if(film){
+      film.style.transition=`transform ${frameIdx===total-1?'0.45':'0.18'}s cubic-bezier(.4,0,.2,1)`;
+      film.style.transform=`translateX(-${frameIdx*100}%)`;
+    }
+    const delay=intervals[Math.min(frameIdx-1, intervals.length-1)];
+    setTimeout(nextSlide, delay);
+  }
+  setTimeout(nextSlide, 80);
+
+}
+
+function showFinalLook(look, spinBtn){
+  const strip=document.getElementById('shuffle-strip');
+  const display=document.getElementById('rnd-display');
+  const sm=SM[look.season]||{}, wm=WM[look.weather]||{};
+
+  setTimeout(()=>{
+    if(strip) strip.style.display='none';
+
+    const dots=(look.colors||[]).map(cid=>{
+      const col=COLORS.find(x=>x.id===cid);
+      return col?`<div class="popup-color-dot" style="background:${col.hex}" title="${col.label}"></div>`:'';
+    }).join('');
+    const vibes=(look.vibes||[]).map(v=>`<span class="popup-vibe">${v}</span>`).join('');
+    const htags=(look.hashtags||[]).slice(0,3).map(h=>`<span class="htag-pill">#${h}</span>`).join('');
+
+    const imgHtml=look.photo
+      ?`<img class="rnd-img" src="${look.photo}" alt="" onclick="openDetail('${look.id}');closeModal('random-modal')">`
+      :`<div class="rnd-nophoto">${sm.emoji||'👗'}</div>`;
+
+    if(display){
+      display.style.opacity='0';
+      display.innerHTML=`
+      <div class="rnd-card" onclick="openDetail('${look.id}');closeModal('random-modal')">
+        ${imgHtml}
+        <div class="rnd-card-overlay">${t('view_detail')}</div>
+      </div>`;
+      display.style.transition='opacity .35s ease';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ display.style.opacity='1'; }));
+    }
+
+    // Append info below
+    const infoDiv = document.createElement('div');
+    infoDiv.innerHTML = `<div class="rnd-info-row">
+        <span class="tag ${sm.tag}">${sm.emoji} ${sm.label}</span>
+        ${look.weather?`<span class="wbadge ${wm.cls}">${wm.emoji} ${t(look.weather)}</span>`:''}
+        ${dots?`<div style="display:flex;gap:4px;align-items:center">${dots}</div>`:''}
+        ${vibes}
+        ${look.date?`<span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${look.date}</span>`:''}
+      </div>
+      ${htags?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px">${htags}</div>`:''}
+      ${look.note?`<p class="rnd-note" style="margin-top:6px">"${look.note}"</p>`:''}
+    `;
+
+    // Re-enable spin btn
+    if(spinBtn){ spinBtn.classList.remove('spinning'); spinBtn.innerHTML='🎲 <span>다시 뽑기</span>'; }
+  }, 200);
+}
+
+// ══════════════════════════════
+//  MOBILE DRAWER
+// ══════════════════════════════
+function openDrawer(){
+  const drawer  = document.getElementById('drawer');
+  const overlay = document.getElementById('drawer-overlay');
+  if(drawer)  drawer.classList.add('open');
+  if(overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden'; // prevent background scroll
+  syncDrawerCounts();
+}
+function closeDrawer(){
+  const drawer  = document.getElementById('drawer');
+  const overlay = document.getElementById('drawer-overlay');
+  if(drawer)  drawer.classList.remove('open');
+  if(overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function syncDrawerCounts(){
+  const all = looks.length;
+  const safe = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  safe('drw-cnt-all', all);
+  ['spring','summer','fall','winter'].forEach(s => safe(`drw-cnt-${s}`, looks.filter(l=>l.season===s).length));
+  ['sunny','cloudy','rainy','snowy'].forEach(w => safe(`drw-cnt-${w}`, looks.filter(l=>l.weather===w).length));
+  safe('drw-cnt-wx-all', looks.filter(l => seasonFilter==='all' || l.season===seasonFilter).length);
+
+  // sync active states
+  const allDrawerBtns = document.querySelectorAll('.drawer-btn');
+  allDrawerBtns.forEach(b => {
+    b.classList.remove('active','wx-sunny','wx-cloudy','wx-rainy','wx-snowy');
+  });
+  if(wxFilter){
+    const wb = document.getElementById(`drw-${wxFilter}`);
+    if(wb){ wb.classList.add(`wx-active-${wxFilter}`); }
+  } else {
+    // wx = all → highlight wx-all button
+    const wxAllB = document.getElementById('drw-wx-all');
+    if(wxAllB) wxAllB.classList.add('active');
+    const sb = document.getElementById(`drw-${seasonFilter==='all'?'all':seasonFilter}`);
+    if(sb) sb.classList.add('active');
+  }
+}
+
+function goHome(){
+  // Reset to current season + weather all
+  wxFilter = null;
+  setSeasonFilterByName(getCurrentSeason());
+  openTab('looks');
+  // Update drawer active states
+  syncDrawerCounts();
+  // Activate wx-all button
+  document.querySelectorAll('.drawer-btn').forEach(b => {
+    b.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy');
+  });
+  const wxAllBtn = document.getElementById('drw-wx-all');
+  if(wxAllBtn) wxAllBtn.classList.add('active');
+}
+
+function drawerWxFilter(wx){
+  wxFilter = (wx === 'all') ? null : wx;
+
+  // Update wx button active states
+  const wxBtns = ['all','sunny','cloudy','rainy','snowy'];
+  wxBtns.forEach(w => {
+    const el = document.getElementById(w === 'all' ? 'drw-wx-all' : `drw-${w}`);
+    if(!el) return;
+    el.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy');
+  });
+  if(wx === 'all'){
+    const allBtn = document.getElementById('drw-wx-all');
+    if(allBtn) allBtn.classList.add('active');
+  } else {
+    const wxBtn = document.getElementById(`drw-${wx}`);
+    if(wxBtn) wxBtn.classList.add(`wx-active-${wx}`);
+  }
+
+  closeDrawer(); openTab('looks'); renderGrid(); updateTitle(); syncDrawerCounts();
+}
+// ══════════════════════════════
+//  LUX STATS LOCK
+// ══════════════════════════════
+let luxUnlocked = localStorage.getItem('lookbook_lux') === '1';
+
+function toggleLuxStats(){
+  if(luxUnlocked){
+    // already unlocked — go to stats
+    openTab('stats'); closeModal && closeModal('');
+    return;
+  }
+  openPaywall('Lux 전체');
+}
+
+function unlockLux(){
+  luxUnlocked = true;
+  localStorage.setItem('lookbook_lux','1');
+  // update stats tab
+  const stab = document.getElementById('tab-stats');
+  if(stab) stab.style.opacity = '1';
+  // update lux stats card
+  const lock = document.getElementById('lux-stats-lock');
+  const btn  = document.getElementById('lux-stats-btn');
+  const prev = document.getElementById('lux-stats-preview');
+  if(lock) lock.style.display = 'none';
+  if(btn)  { btn.textContent = '✓ 통계 보기'; btn.onclick = ()=>openTab('stats'); }
+  if(prev) { prev.style.filter='none'; prev.style.opacity='1'; prev.style.pointerEvents='auto'; }
+  // unlock theme
+  document.querySelectorAll('.locked-theme').forEach(el=>{
+    el.style.opacity='1'; el.style.cursor='pointer';
+    el.onclick = ()=>applyTheme(el,'lux');
+  });
+  showToast(t('pro_complete'));
+}
+
+// Intercept stats tab — lock if not Lux
+function openTabWithLock(name){ openTab(name); } // stats free for all
+
+// ══════════════════════════════
+//  SETTINGS
+// ══════════════════════════════
+function changeLang(lang){
+  curLang=lang; localStorage.setItem('lookbook_lang',lang);
+  const _ls2=document.getElementById('settings-lang-sub'); if(_ls2) _ls2.textContent={ko:'한국어',en:'English',ja:'日本語',zh:'中文'}[lang];
+  applyI18n(); renderGrid(); renderStats(); renderHtagPanel();
+}
+function applyThemeSelect(name){ applyThemeByName(name); document.querySelectorAll('#theme-grid .theme-swatch').forEach(el=>el.classList.toggle('active',el.dataset.theme===name)); }
+function clearAll(){ if(!confirm(t('confirm_all'))) return; looks=[]; persist(); renderGrid(); renderStats(); renderHtagPanel(); showToast(t('deleted')); }
+// ══════════════════════════════
+//  NOTIFICATIONS — Web Notifications API
+// ══════════════════════════════
+let notifEnabled = localStorage.getItem('lookbook_notif') === '1';
+let notifTime    = localStorage.getItem('lookbook_notif_time') || '08:00';
+
+function initNotifUI(){
+  // Sync toggle states
+  const t1 = document.getElementById('notif-toggle') || {classList:{toggle:()=>{},add:()=>{},remove:()=>{},contains:()=>false}};
+  const t2 = document.getElementById('settings-notif-toggle') || {classList:{toggle:()=>{},add:()=>{},remove:()=>{},contains:()=>false}};
+  const ti1 = document.getElementById('notif-time') || {};
+  const ti2 = document.getElementById('settings-notif-time') || {};
+  const sub = document.getElementById('settings-notif-sub');
+  if(t1) t1.classList.toggle('on', notifEnabled);
+  if(t2) t2.classList.toggle('on', notifEnabled);
+  if(ti1 && 'value' in ti1) ti1.value = notifTime;
+  if(ti2 && 'value' in ti2) ti2.value = notifTime;
+  if(sub) sub.textContent = notifEnabled ? t('notif_on_time').replace('{time}', notifTime) : t('notif_off_label');
+  updateNotifStatus();
+}
+
+function updateNotifStatus(){
+  const el = document.getElementById('notif-status');
+  if(!el) return;
+  if(!('Notification' in window)){
+    el.textContent = t('notif_unsupported');
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    el.textContent = '⚠️ 브라우저 설정에서 알림을 허용해주세요';
+    return;
+  }
+  el.textContent = notifEnabled ? `✓ 매일 ${notifTime}에 알림이 전송돼요` : '';
+}
+
+async function toggleNotif(el){
+  if(!('Notification' in window)){
+    showToast(t('notif_unsupported'));
+    return;
+  }
+  if(!notifEnabled){
+    // Request permission
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      showToast(t('notif_denied'));
+      return;
+    }
+    notifEnabled = true;
+    scheduleNotification();
+    showToast(t('notif_on'));
+  } else {
+    notifEnabled = false;
+    cancelNotification();
+    showToast(t('notif_off'));
+  }
+  localStorage.setItem('lookbook_notif', notifEnabled ? '1' : '0');
+  initNotifUI();
+}
+
+function toggleNotifSettings(el){ toggleNotif(el); }
+
+function saveNotifTime(val){
+  notifTime = val;
+  localStorage.setItem('lookbook_notif_time', val);
+  if(notifEnabled) scheduleNotification();
+  initNotifUI();
+  showToast(t("notif_time_set").replace("{time}", val));
+}
+
+function scheduleNotification(){
+  // Cancel existing
+  cancelNotification();
+  // Calculate ms until next alarm time
+  const [h, m] = notifTime.split(':').map(Number);
+  const now = new Date();
+  const next = new Date();
+  next.setHours(h, m, 0, 0);
+  if(next <= now) next.setDate(next.getDate() + 1); // tomorrow
+  const msUntil = next - now;
+
+  const timerId = setTimeout(() => {
+    fireNotification();
+    // Re-schedule for next day
+    const dailyId = setInterval(fireNotification, 24 * 60 * 60 * 1000);
+    localStorage.setItem('lookbook_notif_interval', dailyId);
+  }, msUntil);
+
+  localStorage.setItem('lookbook_notif_timer', timerId);
+  console.log(`Notification scheduled in ${Math.round(msUntil/60000)} minutes`);
+}
+
+function fireNotification(){
+  if(!notifEnabled || Notification.permission !== 'granted') return;
+  const reco = getSmartReco();
+  const body = reco
+    ? t('notif_body')
+    : t('good_day');
+  try {
+    new Notification('Closette', {
+      body,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      tag: 'closette-daily',
+    });
+  } catch(e){ console.log('Notification error:', e); }
+}
+
+function cancelNotification(){
+  const tid = localStorage.getItem('lookbook_notif_timer');
+  const iid = localStorage.getItem('lookbook_notif_interval');
+  if(tid) clearTimeout(parseInt(tid));
+  if(iid) clearInterval(parseInt(iid));
+}
+
+// ══════════════════════════════
+//  THEME
+// ══════════════════════════════
+function applyTheme(el,name){ document.querySelectorAll('#theme-grid .theme-swatch').forEach(s=>s.classList.remove('active')); el.classList.add('active'); applyThemeByName(name); const ts=document.getElementById('theme-select'); if(ts) ts.value=name; }
+function applyThemeByName(name){ document.body.setAttribute('data-theme',name); curTheme=name; localStorage.setItem('lookbook_theme',name); }
+
+// ══════════════════════════════
+//  TEMPERATURE UNIT
+// ══════════════════════════════
+function toDisplayTemp(celsius){
+  if(tempUnit === 'F') return Math.round(celsius * 9/5 + 32);
+  return celsius;
+}
+function unitLabel(){ return tempUnit === 'F' ? '°F' : '°C'; }
+
+function toggleTempUnit(){
+  tempUnit = tempUnit === 'C' ? 'F' : 'C';
+  localStorage.setItem('lookbook_temp_unit', tempUnit);
+  updateUnitToggleUI();
+  // Re-render weather strip with new unit
+  if(liveWeatherData) showWeatherUI(liveWeatherData.temp, liveWeatherData.wx);
+  showToast(tempUnit === 'F' ? 'Switched to °F' : '°C로 변경됐어요');
+}
+
+function updateUnitToggleUI(){
+  const uc = document.getElementById('unit-c');
+  const uf = document.getElementById('unit-f');
+  const sub = document.getElementById('temp-unit-sub');
+  if(uc) uc.classList.toggle('active', tempUnit === 'C');
+  if(uf) uf.classList.toggle('active', tempUnit === 'F');
+  if(sub) sub.textContent = tempUnit === 'F'
+    ? 'Currently: Fahrenheit (°F)'
+    : 'Currently: Celsius (°C)';
+}
+
+// ══════════════════════════════
+//  PAYWALL
+// ══════════════════════════════
+// ══════════════════════════════
+//  PRIVACY POLICY — multilingual
+// ══════════════════════════════
+const PRIVACY_CONTENT = {
+  en: {
+    title: "Privacy Policy",
+    updated: "Last updated: May 2025",
+    sections: [
+      ["1. Information We Collect", "Closette collects outfit photos, weather info, colors, style tags, and hashtags that you enter directly. All data is stored only on your device (localStorage) and is never sent to external servers."],
+      ["2. Location Data", "To provide weather information, we send the latitude and longitude of your selected city to the Open-Meteo API. This data is used only for weather lookups and is never stored."],
+      ["3. Photo Data", "Uploaded photos are stored only in your browser's local storage. Photos are never uploaded to a server or shared with third parties."],
+      ["4. Notifications", "The morning reminder feature requests browser notification permission. Declining permission does not affect any other app features."],
+      ["5. Data Deletion", "You can delete all your data at any time via Settings → Delete All. Deleted data cannot be recovered."],
+      ["6. Third-Party Services", "Weather data: Open-Meteo (open-meteo.com) — free open-source weather API. Fonts: Google Fonts — used to load design fonts."],
+      ["7. Children's Privacy", "This app does not knowingly collect personal information from children under 13."],
+      ["8. Contact", "For privacy inquiries, please contact us through the App Store developer page."]
+    ]
+  },
+  ko: {
+    title: "개인정보 처리방침",
+    updated: "최종 업데이트: 2025년 5월",
+    sections: [
+      ["1. 수집하는 정보", "Closette은 사용자가 직접 입력한 착장 사진, 날씨 정보, 색상, 스타일 태그, 해시태그를 수집합니다. 모든 데이터는 사용자의 기기(localStorage)에만 저장되며, 외부 서버로 전송되지 않습니다."],
+      ["2. 위치 정보", "날씨 정보를 위해 사용자가 선택한 도시의 위치 좌표(위도/경도)를 Open-Meteo API에 전송합니다. 이 정보는 날씨 조회 목적으로만 사용되며 저장되지 않습니다."],
+      ["3. 사진 데이터", "업로드된 사진은 기기 내 브라우저 저장소(localStorage)에만 보관됩니다. 사진은 서버에 업로드되거나 제3자와 공유되지 않습니다."],
+      ["4. 알림", "아침 알림 기능은 브라우저 알림 권한을 요청합니다. 알림 권한을 거부하셔도 앱의 다른 기능은 정상 작동합니다."],
+      ["5. 데이터 삭제", "설정 → 전체 삭제를 통해 모든 데이터를 즉시 삭제할 수 있습니다. 앱 데이터 삭제 시 복구가 불가능합니다."],
+      ["6. 제3자 서비스", "날씨 데이터: Open-Meteo (open-meteo.com) — 무료 오픈소스 날씨 API. 폰트: Google Fonts — 디자인 폰트 로드에 사용."],
+      ["7. 어린이 개인정보", "본 앱은 13세 미만 아동으로부터 의도적으로 개인정보를 수집하지 않습니다."],
+      ["8. 문의", "개인정보 처리와 관련한 문의사항은 앱 스토어 개발자 연락처를 통해 문의해 주세요."]
+    ]
+  },
+  ja: {
+    title: "プライバシーポリシー",
+    updated: "最終更新: 2025年5月",
+    sections: [
+      ["1. 収集する情報", "Closetteは、ユーザーが入力したコーデ写真、天気情報、カラー、スタイルタグ、ハッシュタグを収集します。すべてのデータはユーザーのデバイス（localStorage）にのみ保存され、外部サーバーには送信されません。"],
+      ["2. 位置情報", "天気情報の提供のため、選択された都市の緯度・経度をOpen-Meteo APIに送信します。この情報は天気の取得目的のみに使用され、保存されません。"],
+      ["3. 写真データ", "アップロードされた写真はブラウザのローカルストレージにのみ保存されます。写真はサーバーにアップロードされたり、第三者と共有されることはありません。"],
+      ["4. 通知", "朝のリマインダー機能はブラウザの通知許可を要求します。許可を拒否しても、他の機能は正常に動作します。"],
+      ["5. データの削除", "設定 → 全て削除から、いつでもすべてのデータを削除できます。削除したデータは復元できません。"],
+      ["6. サードパーティサービス", "天気データ: Open-Meteo (open-meteo.com) — 無料のオープンソース天気API。フォント: Google Fonts — デザインフォントの読み込みに使用。"],
+      ["7. 子どものプライバシー", "本アプリは13歳未満の子どもから意図的に個人情報を収集しません。"],
+      ["8. お問い合わせ", "プライバシーに関するお問い合わせは、App Storeの開発者ページよりご連絡ください。"]
+    ]
+  },
+  zh: {
+    title: "隐私政策",
+    updated: "最后更新: 2025年5月",
+    sections: [
+      ["1. 收集的信息", "Closette收집您直接输入的穿搭照片、天气信息、颜色、风格标签和话题标签。所有数据仅存储在您的设备（localStorage）上，不会发送到外部服务器。"],
+      ["2. 位置数据", "为提供天气信息，我们将您所选城市的经纬度发送至Open-Meteo API。此数据仅用于天气查询，不会被保存。"],
+      ["3. 照片数据", "上传的照片仅存储在浏览器的本地存储中，不会上传至服务器或与第三方共享。"],
+      ["4. 通知", "早晨提醒功能需要浏览器通知权限。拒绝权限不影响其他功能的正常使用。"],
+      ["5. 数据删除", "您可随时通过 设置 → 全部删除 立即删除所有数据。删除后无法恢复。"],
+      ["6. 第三方服务", "天气数据: Open-Meteo (open-meteo.com) — 免费开源天气API。字体: Google Fonts — 用于加载设计字体。"],
+      ["7. 儿童隐私", "本应用不会故意收集13岁以下儿童的个人信息。"],
+      ["8. 联系方式", "如有隐私相关疑问，请通过App Store开发者页面与我们联系。"]
+    ]
+  }
+};
+
+function openPrivacyModal(){
+  const lang = curLang || 'en';
+  const content = PRIVACY_CONTENT[lang] || PRIVACY_CONTENT.en;
+  const title = document.getElementById('privacy-modal-title');
+  const body  = document.getElementById('privacy-modal-body');
+  if(title) title.textContent = content.title;
+  if(body){
+    const sectionsHtml = content.sections.map(([heading, text]) =>
+      `<p style="font-weight:500;color:var(--text-primary);margin-bottom:6px">${heading}</p>
+       <p style="margin-bottom:14px">${text}</p>`
+    ).join('');
+    body.innerHTML = `
+      <p style="font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:4px">${content.title}</p>
+      <p style="margin-bottom:16px;font-size:12px;color:var(--text-muted)">${content.updated}</p>
+      ${sectionsHtml}`;
+  }
+  openModal('privacy-modal');
+}
+
+function openPaywall(f){ const _pd=document.getElementById('paywall-desc'); if(_pd) _pd.textContent=`"${f}" ${t('pro_feature')}`; document.getElementById('paywall').classList.add('open'); }
+function closePaywall(){ document.getElementById('paywall').classList.remove('open'); }
+function demoPurchase(){ closePaywall(); unlockLux(); }
+document.getElementById('paywall').addEventListener('click',e=>{ if(e.target===document.getElementById('paywall')) closePaywall(); });
+
+// ══════════════════════════════
+//  TOAST
+// ══════════════════════════════
+function showToast(msg){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+
+// ══════════════════════════════
+//  START
+// ══════════════════════════════
+checkOnboard();
+
+// Handle PWA shortcuts (?action=today or ?action=random)
+(function handleShortcuts(){
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action');
+  if(action === 'today'){
+    window.addEventListener('load', () => setTimeout(openTodayPopup, 800));
+  } else if(action === 'random'){
+    window.addEventListener('load', () => setTimeout(openRandom, 800));
+  }
+})();
+
+// Register Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => {}); // SW requires HTTPS — silent on local
+  });
+}
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install banner after 3 seconds if not dismissed
+  setTimeout(() => {
+    if(deferredPrompt && !localStorage.getItem('pwa_install_dismissed')){
+      showInstallBanner();
+    }
+  }, 3000);
+});
+
+function showInstallBanner(){
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--text-primary);color:white;
+    padding:12px 20px;border-radius:12px;
+    display:flex;align-items:center;gap:12px;
+    font-family:'DM Sans',sans-serif;font-size:13px;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:9999;
+    max-width:calc(100vw - 40px);
+  `;
+  banner.innerHTML = `
+    <span style="font-size:20px">📱</span>
+    <span>홈 화면에 앱으로 설치할 수 있어요</span>
+    <button onclick="installPWA()" style="padding:6px 14px;border-radius:7px;background:white;color:var(--text-primary);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">설치</button>
+    <button onclick="dismissInstall()" style="padding:6px;border-radius:50%;background:rgba(255,255,255,.2);color:white;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:flex;align-items:center;justify-content:center">×</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function installPWA(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(result => {
+      if(result.outcome === 'accepted') showToast(t('pwa_installed'));
+      deferredPrompt = null;
+    });
+  }
+  dismissInstall();
+}
+
+function dismissInstall(){
+  localStorage.setItem('pwa_install_dismissed', '1');
+  const b = document.getElementById('install-banner');
+  if(b) b.remove();
+}
+
+function drawerSeasonFilter(s){
+  seasonFilter = s;
+  wxFilter = null; // reset weather to ALL when season changes
+
+  // Update season btn active states
+  ['spring','summer','fall','winter'].forEach(sn => {
+    const el = document.getElementById(`drw-${sn}`);
+    if(!el) return;
+    el.classList.remove('active','season-active-spring','season-active-summer','season-active-fall','season-active-winter');
+    if(sn === s) el.classList.add(`season-active-${sn}`);
+  });
+
+  // Reset wx buttons — set "all" as active
+  ['sunny','cloudy','rainy','snowy'].forEach(wx => {
+    const el = document.getElementById(`drw-${wx}`);
+    if(el) el.classList.remove('active','wx-active-sunny','wx-active-cloudy','wx-active-rainy','wx-active-snowy');
+  });
+  const wxAllBtn = document.getElementById('drw-wx-all');
+  if(wxAllBtn) wxAllBtn.classList.add('active');
+
+  // Update sidebar
+  document.querySelectorAll('.sidebar .filter-btn:not([id^="fb-"])').forEach(b=>b.classList.remove('active'));
+  const map = {spring:'d-spring', summer:'d-summer', fall:'d-fall', winter:'d-winter'};
+  const dotClass = map[s];
+  if(dotClass){
+    const btn = document.querySelector(`.sidebar .filter-btn .${dotClass}`);
+    if(btn) btn.closest('.filter-btn').classList.add('active');
+  }
+
+  closeDrawer(); openTab('looks'); renderGrid(); updateTitle(); syncDrawerCounts();
+}
+</script>
+</body>
+</html>
