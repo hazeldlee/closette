@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Closette">
 <meta name="theme-color" content="#1A1A1A">
 <meta name="description" content="오늘 뭐 입을까 — 날씨 기반 착장 추천 앱">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Closette</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
@@ -2703,7 +2703,7 @@ function renderPrivacyPolicy(){
       ).join('');
   }
 }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeModal(id){ const el=document.getElementById(id); if(el) el.classList.remove('open'); }
 function today(){ return new Date().toISOString().split('T')[0]; }
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
 function toggleOpt(){ document.getElementById('opt-fields').classList.toggle('open'); document.getElementById('opt-toggle').classList.toggle('open'); }
@@ -2903,9 +2903,40 @@ function changeSeason(id,newS){
   showToast(`${SM[newS].emoji} ${SM[newS].label}`);
 }
 function deleteLook(id){
-  if(!confirm(t('confirm_delete'))) return;
-  looks=looks.filter(l=>l.id!==id); persist(); renderGrid(); renderHtagPanel(); renderStats(); renderSmartReco();
-  closeModal('detail-modal'); showToast(t('deleted'));
+  // No confirm() — blocked in iOS PWA standalone mode
+  // Instead: delete immediately + show undo toast for 4 seconds
+  const removed = looks.find(l => l.id === id);
+  looks = looks.filter(l => l.id !== id);
+  try { persist(); } catch(e) {}
+  try { renderGrid(); } catch(e) {}
+  try { renderStats(); } catch(e) {}
+  const dm = document.getElementById('detail-modal');
+  if(dm) dm.classList.remove('open');
+
+  // Undo toast
+  const toastEl = document.getElementById('toast');
+  if(toastEl && removed){
+    toastEl.textContent = '';
+    toastEl.innerHTML = `Deleted &nbsp;<button onclick="undoDelete()" style="background:white;color:#1A1A1A;border:none;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Undo</button>`;
+    toastEl.classList.add('show');
+    window._deletedLook = removed;
+    window._deleteTimer = setTimeout(() => {
+      toastEl.classList.remove('show');
+      window._deletedLook = null;
+    }, 4000);
+  }
+}
+
+function undoDelete(){
+  if(!window._deletedLook) return;
+  clearTimeout(window._deleteTimer);
+  looks.push(window._deletedLook);
+  looks.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+  window._deletedLook = null;
+  try { persist(); } catch(e) {}
+  try { renderGrid(); } catch(e) {}
+  const toastEl = document.getElementById('toast');
+  if(toastEl){ toastEl.classList.remove('show'); toastEl.textContent = 'Restored ✓'; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'), 2000); }
 }
 
 // ══════════════════════════════
@@ -3424,7 +3455,7 @@ checkOnboard();
 // Register Service Worker
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('sw.js')
       .then(reg => console.log('SW registered:', reg.scope))
       .catch(err => {}); // SW requires HTTPS — silent on local
   });
