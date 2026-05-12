@@ -127,8 +127,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .s-div{height:1px;background:var(--border);margin:6px 0}
 
 /* ── PANELS ── */
-.panels{overflow:auto}
-.panel{padding:22px;display:none}
+.panels{overflow-y:auto;flex:1}
+.panel{padding:22px;display:none;min-height:200px}
 .panel.active{display:block}
 .panel-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
 .panel-title{font-family:'Playfair Display',serif;font-size:26px;line-height:1.1;letter-spacing:-.02em}
@@ -202,10 +202,10 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .htag-results-label{font-size:11px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
 
 /* ── SETTINGS PANEL ── */
-.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:14px;overflow:hidden}
+.settings-section{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:11px;margin-bottom:14px}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
 .settings-row:last-child{border-bottom:none}
-.settings-row-label{font-size:13px;font-weight:500}
+.settings-row-label{font-size:13px;font-weight:500;color:#1A1A1A}
 .settings-row-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
 .settings-row-right{display:flex;align-items:center;gap:10px}
 .settings-select{padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none;cursor:pointer}
@@ -519,6 +519,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 @media (max-width:680px){
   .app-body{grid-template-columns:1fr}
   .sidebar{display:none}
+  .panels{min-height:calc(100vh - 138px);overflow-y:auto}
   header{padding:0 16px}
   .logo{font-size:18px}
   .menu-btn{width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px}
@@ -887,8 +888,8 @@ body[data-theme='noir']{
     </div>
 
     <!-- SETTINGS -->
-    <div class="panel" id="panel-settings">
-      <div class="panel-header"><h1 class="panel-title"><em data-i="settings_title">설정</em></h1></div>
+    <div class="panel" id="panel-settings" style="background:#fff">
+      <div class="panel-header"><h1 class="panel-title"><em data-i="settings_title">Settings</em></h1></div>
       <div class="settings-section">
         <div class="settings-section-title" data-i="region_lang">지역 & 언어</div>
         <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
@@ -1690,13 +1691,13 @@ function onObCityChange(){
 function initSettingsCountryDropdown(){
   const sel = document.getElementById('settings-country-select');
   if(!sel) return;
-  const countries = getCountries();
-  sel.innerHTML = `<option value="">${t('select_country')}</option>` +
-    countries.map(co => `<option value="${co}">${getCountryFlag(co)} ${co}</option>`).join('');
+  // Update placeholder text only (options are pre-rendered in HTML)
+  const ph = document.getElementById('settings-country-placeholder');
+  if(ph) ph.textContent = t('select_country') || '-- Select country --';
   // Pre-select current country
-  if(curCity){
+  if(curCity && curCity.country){
     sel.value = curCity.country;
-    if(curCity.country) onSettingsCountryChange(curCity.name);
+    onSettingsCountryChange(curCity.name);
   }
 }
 
@@ -2099,6 +2100,7 @@ function refreshReco(){ renderSmartReco(); }
 //  TABS
 // ══════════════════════════════
 function openTab(name){
+  console.log('openTab called:', name);
   if(name==='stats') setTimeout(renderStats, 50);
   // tabs in tab bar (settings no longer has a tab button)
   ['looks','stats'].forEach(tabName=>{
@@ -2109,7 +2111,12 @@ function openTab(name){
     const pn=document.getElementById('panel-'+tabName); if(pn) pn.classList.toggle('active',tabName===name);
   });
   if(name==='stats') renderStats();
-  if(name==='settings'){ const _sc=document.getElementById('settings-count-sub'); if(_sc) _sc.textContent=`${looks.length}${curLang==='en'?' looks':curLang==='ja'?' コーデ':curLang==='zh'?' 套':'개'}`; }
+  if(name==='settings'){
+    const _sc=document.getElementById('settings-count-sub');
+    if(_sc) _sc.textContent=`${looks.length}${curLang==='en'?' looks':curLang==='ja'?' コーデ':curLang==='zh'?' 套':'개'}`;
+    try{ initSettingsCountryDropdown(); }catch(e){}
+    try{ applyI18n(); }catch(e){}
+  }
 }
 
 // ══════════════════════════════
@@ -2182,6 +2189,9 @@ function formatDate(dateStr){
   } catch(e){ return dateStr; }
 }
 
+function filterByHtag(tag){ /* tags feature removed — stub */ }
+function toggleHtagFilter(tag){ /* tags feature removed — stub */ }
+
 function getAllTags(){
   const map = {};
   looks.forEach(l => (l.hashtags||[]).forEach(h => { map[h] = (map[h]||0)+1; }));
@@ -2231,7 +2241,7 @@ function cardHtml(look,i){
     :`<div class="card-no-photo">${sm.emoji||'👗'}<span>No Photo</span></div>`;
   const dots=(look.colors||[]).map(cid=>{ const c=COLORS.find(x=>x.id===cid); return c?`<div class="color-dot" style="background:${c.hex};${c.border?'border-color:'+c.border:''}" title="${c.label}"></div>`:''; }).join('');
   const vibeText=(look.vibes||[]).join(' · ');
-  const htags=(look.hashtags||[]).slice(0,2).map(h=>`<span class="htag-pill" onclick="event.stopPropagation();filterByHtag('${h}')">#${h}</span>`).join('');
+  // hashtag pills removed (tags feature removed)
   return `
     <div class="look-card" style="animation-delay:${i*40}ms" onclick="openDetail('${look.id}')">
       ${imgHtml}
