@@ -327,7 +327,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .detail-note{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:13px}
 .sublabel{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
 .season-edit-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
-.se-chip{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
+.se-chip{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:white;font-size:11px;cursor:pointer;transition:all .12s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
 .se-chip:hover{border-color:#aaa}
 .se-spring{background:var(--spring);color:var(--spring-text);border-color:var(--spring-text);font-weight:600}.se-summer{background:var(--summer);color:var(--summer-text);border-color:var(--summer-text);font-weight:600}.se-fall{background:var(--fall);color:var(--fall-text);border-color:var(--fall-text);font-weight:600}.se-winter{background:var(--winter);color:var(--winter-text);border-color:var(--winter-text);font-weight:600}
 .detail-colors{display:flex;align-items:center;gap:5px;margin-bottom:9px}
@@ -708,6 +708,20 @@ body[data-theme='noir']{
 .stat-empty{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;font-style:italic}
 .stat-htag-row{display:flex;gap:6px;flex-wrap:wrap}
 .stat-htag-pill{padding:4px 10px;border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:500}
+
+.detail-color-picker{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.detail-color-swatch{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.detail-color-swatch.sel{transform:scale(1.15);box-shadow:0 0 0 2px var(--accent)}
+.detail-color-swatch:hover{transform:scale(1.1)}
+
+.detail-edit-row{margin-bottom:8px;overflow:visible}
+.detail-edit-label{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+.detail-color-row{display:flex;flex-direction:row;overflow-x:auto;gap:6px;padding:4px 4px 6px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;overflow-y:visible}
+.detail-color-row::-webkit-scrollbar{display:none}
+.detail-color-swatch{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0;transition:transform .12s,box-shadow .12s;box-sizing:border-box}
+.detail-color-swatch.sel{transform:scale(1.18);box-shadow:0 0 0 2px var(--accent)}
+.vibe-chip{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .13s}
+.vibe-chip.sel{background:var(--accent);color:white;border-color:var(--accent)}
 </style>
 </head>
 <body data-theme="default">
@@ -834,6 +848,7 @@ body[data-theme='noir']{
 <div class="tab-bar">
   <button class="tab active" id="tab-looks"   onclick="openTab('looks')"  ><span data-i="looks">착장</span></button>
   <button class="tab"        id="tab-stats"   onclick="openTabWithLock('stats')"  ><span data-i="stats">통계</span></button>
+        <button class="tab" id="tab-hashtags" onclick="openLuxHashtags()" style="display:flex;align-items:center;gap:4px"># <span id="hashtag-tab-count" style="font-size:11px;background:var(--accent-light);color:var(--accent);border-radius:9999px;padding:0 5px;font-weight:600;min-width:16px;text-align:center"></span></button>
 </div>
 
 <div class="app-body">
@@ -887,6 +902,19 @@ body[data-theme='noir']{
       </div>
       <button class="prem-cta" onclick="openPaywall('Lux 전체')" style="background:linear-gradient(135deg,#C9A84C,#E8C96A);margin-top:20px">✦ Lux 월 ₩3,900으로 시작하기</button>
       <p class="prem-subtext">연간 결제 시 ₩29,900 · 언제든 취소 가능</p>
+    </div>
+
+    <!-- HASHTAG (Lux) -->
+    <div class="panel" id="panel-hashtag">
+      <div class="panel-header">
+        <h1 class="panel-title"># <em data-i="tags">Tags</em></h1>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;gap:16px">
+        <div style="font-size:48px">✦</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-style:italic;color:var(--text-primary)">Hashtag Collections</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;max-width:260px">Browse and filter your looks by hashtag. Coming soon with <strong>Closette Lux</strong>.</div>
+        <button onclick="openPaywall('Hashtags')" style="margin-top:8px;padding:10px 24px;border-radius:10px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">✦ Unlock Lux</button>
+      </div>
     </div>
 
     <!-- SETTINGS -->
@@ -953,15 +981,9 @@ body[data-theme='noir']{
           <div class="settings-row-right">
             <select class="settings-select" id="theme-select" onchange="applyThemeSelect(this.value)">
               <option value="default">Default</option>
-              <option value="bloom">Bloom</option>
               <option value="earth">Earth</option>
-              <option value="mono">Mono</option>
-              <option value="rose">Rose</option>
-              <option value="sage">Sage</option>
-              <option value="slate">Slate</option>
-              <option value="sand">Sand</option>
-              <option value="noir">Noir</option>
             </select>
+            <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">✦ More themes available in Lux</div
           </div>
         </div>
         <div class="settings-row">
@@ -977,18 +999,18 @@ body[data-theme='noir']{
           </div>
         </div>
       </div>
-      <div class="settings-section">
-        <div class="settings-section-title">알림</div>
+      <div class="settings-section" style="opacity:.7;pointer-events:none;position:relative">
+        <div style="position:absolute;top:10px;right:12px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:9999px;letter-spacing:.05em">✦ LUX</div>
+        <div class="settings-section-title" data-i="morning_notif">Morning Reminder</div>
         <div class="settings-row">
           <div>
-            <div class="settings-row-label">아침 착장 알림</div>
-            <div class="settings-row-sub" id="settings-notif-sub">꺼짐</div>
+            <div class="settings-row-label" data-i="morning_notif">Morning Outfit Reminder</div>
+            <div class="settings-row-sub">Unlock with ✦ Lux</div>
           </div>
           <div class="settings-row-right" style="gap:12px">
             <input type="time" id="settings-notif-time" value="08:00"
-              style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-primary);font-family:'DM Mono',monospace"
-              onchange="saveNotifTime(this.value)">
-            <div class="toggle-track" id="settings-notif-toggle" onclick="toggleNotifSettings(this)"><div class="toggle-thumb"></div></div>
+              style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-primary);font-family:'DM Mono',monospace" disabled>
+            <div class="toggle-track" style="opacity:.4"><div class="toggle-thumb"></div></div>
           </div>
         </div>
       </div>
@@ -1004,13 +1026,13 @@ body[data-theme='noir']{
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-section-title">법적 고지</div>
+        <div class="settings-section-title" data-i="legal">법적 고지</div>
         <div class="settings-row">
-          <div><div class="settings-row-label">개인정보 처리방침</div><div class="settings-row-sub">Privacy Policy</div></div>
-          <div class="settings-row-right"><button class="btn btn-outline" onclick="openPrivacyModal()">보기</button></div>
+          <div><div class="settings-row-label" data-i="privacy_title">개인정보 처리방침</div><div class="settings-row-sub" data-i="privacy_sub">Privacy Policy</div></div>
+          <div class="settings-row-right"><button class="btn btn-outline" onclick="openPrivacyModal()" data-i="view_btn">보기</button></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-row-label">앱 정보</div><div class="settings-row-sub">Closette v1.0</div></div>
+          <div><div class="settings-row-label" data-i="app_info">앱 정보</div><div class="settings-row-sub">Closette v1.0</div></div>
         </div>
       </div>
     </div>
@@ -1199,6 +1221,27 @@ body[data-theme='noir']{
 
 
 
+  <!-- Lux -->
+  <div style="margin-bottom:6px;padding:10px 12px;border-radius:10px;border:1.5px dashed rgba(201,168,76,.5);background:rgba(201,168,76,.05);cursor:not-allowed;opacity:.8">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">✦</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#C9A84C;font-family:'DM Sans',sans-serif">Closette Lux</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">✨ Coming soon — good things take time</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lux -->
+  <button onclick="closeDrawer();openTab('premium')" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #C9A84C;background:rgba(201,168,76,.06);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;transition:all .13s;margin-bottom:6px">
+    <span style="font-size:15px">✦</span>
+    <div style="text-align:left;flex:1">
+      <div style="font-size:13px;font-weight:600;color:#C9A84C">Closette Lux</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:1px">✨ Coming soon — stay tuned!</div>
+    </div>
+    <span style="font-size:10px;background:linear-gradient(135deg,#C9A84C,#E8C96A);color:white;padding:2px 7px;border-radius:9999px;font-weight:700;letter-spacing:.04em">SOON</span>
+  </button>
+
   <!-- Settings -->
   <button onclick="closeDrawer();openTab('settings')" style="width:100%;padding:8px 12px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);cursor:pointer;text-align:left;border-radius:7px;display:flex;align-items:center;gap:7px;transition:color .13s" onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-muted)'">
     <span>⚙</span><span data-i="settings">설정</span>
@@ -1276,7 +1319,13 @@ const LANGS = {
     notif_body:'오늘 날씨에 맞는 착장이 준비됐어요 ✦',
     good_day:'오늘도 멋진 하루 보내세요 ✦',
     select_country:'나라를 선택해주세요',
-    select_city:'도시를 선택해주세요'
+    select_city:'도시를 선택해주세요',
+    legal:'법적 고지',
+    privacy_title:'개인정보 처리방침',
+    privacy_sub:'개인정보 처리방침',
+    view_btn:'보기',
+    app_info:'앱 정보',
+    morning_notif_label:'아침 착장 알림'
   },
   en:{
     add:"Add",looks:"Looks",stats:"Stats",tags:"Tags",settings:"Settings",
@@ -1340,7 +1389,13 @@ const LANGS = {
     notif_body:"Today's outfit is ready ✦",
     good_day:"Have a great day ✦",
     select_country:"Select a country",
-    select_city:"Select a city"
+    select_city:"Select a city",
+    legal:"Legal",
+    privacy_title:"Privacy Policy",
+    privacy_sub:"Privacy Policy",
+    view_btn:"View",
+    app_info:"App Info",
+    morning_notif_label:"Morning Outfit Reminder"
   },
   ja:{
     add:'追加',looks:'コーデ',stats:'統計',tags:'タグ',settings:'設定',
@@ -1441,18 +1496,22 @@ const SM={spring:{label:'Spring',emoji:'🌸',tag:'tag-spring',se:'se-spring'},s
 const WM={sunny:{emoji:'☀️',cls:'wb-sunny'},cloudy:{emoji:'☁️',cls:'wb-cloudy'},rainy:{emoji:'🌧️',cls:'wb-rainy'},snowy:{emoji:'❄️',cls:'wb-snowy'}};
 
 const COLORS=[
-  {id:'black', label:'Black',  hex:'#1A1A1A'},
-  {id:'white', label:'White',  hex:'#F5F5F0', border:'#ddd'},
-  {id:'beige', label:'Beige',  hex:'#D4C4A8'},
-  {id:'denim', label:'Denim',  hex:'#4A6FA5'},
-  {id:'brown', label:'Brown',  hex:'#8B5E3C'},
-  {id:'gray',  label:'Gray',   hex:'#9E9E9E'},
-  {id:'navy',  label:'Navy',   hex:'#1B2A4A'},
-  {id:'olive', label:'Olive',  hex:'#6B7B3A'},
-  {id:'red',   label:'Red',    hex:'#C0392B'},
-  {id:'pink',  label:'Pink',   hex:'#E91E8C'},
-  {id:'yellow',label:'Yellow', hex:'#F4C542'},
-  {id:'green', label:'Green',  hex:'#2E7D32'},
+  // Rainbow
+  {id:'red',     label:'Red',    hex:'#E53935'},
+  {id:'orange',  label:'Orange', hex:'#FB8C00'},
+  {id:'yellow',  label:'Yellow', hex:'#FDD835'},
+  {id:'green',   label:'Green',  hex:'#43A047'},
+  {id:'blue',    label:'Blue',   hex:'#1E88E5'},
+  {id:'indigo',  label:'Indigo', hex:'#3949AB'},
+  {id:'purple',  label:'Purple', hex:'#8E24AA'},
+  {id:'pink',    label:'Pink',   hex:'#E91E8C'},
+  // Neutrals
+  {id:'white',   label:'White',  hex:'#F5F5F0', border:'#ddd'},
+  {id:'gray',    label:'Gray',   hex:'#9E9E9E'},
+  {id:'black',   label:'Black',  hex:'#1A1A1A'},
+  // Extras
+  {id:'beige',   label:'Beige',  hex:'#D4C4A8'},
+  {id:'brown',   label:'Brown',  hex:'#8B5E3C'},
 ];
 const VIBES=['Minimal','Casual','Chic','Cozy','Street','Sporty','Classic','Boho','Dark','Preppy'];
 
@@ -1465,11 +1524,19 @@ function applyI18n(){
     const val=t(key);
     if(val) el.textContent=val;
   });
-  // placeholder
+  // Placeholders
   const hi=document.getElementById('htag-input');
   if(hi) hi.placeholder=curLang==='en'?'#workwear  #casual':curLang==='ja'?'#オフィス  #カジュアル':curLang==='zh'?'#工作装  #休闲':'#출근룩  #데이트룩';
   const hn=document.getElementById('look-note');
   if(hn) hn.placeholder=curLang==='en'?'Notes about this look…':curLang==='ja'?'このコーデについてのメモ…':curLang==='zh'?'关于这套穿搭的备注…':'이 날의 착장에 대한 메모를 남겨보세요…';
+  // Update privacy modal title if open
+  const ppTitle = document.getElementById('pp-title');
+  if(ppTitle) { const pp = PRIVACY[curLang]||PRIVACY.en; ppTitle.textContent = pp.title; }
+  // Update drawer next button labels
+  const nextLabels = {ko:'다음 →', en:'Next →', ja:'次へ →', zh:'下一步 →'};
+  document.querySelectorAll('.onboard-next').forEach(b => {
+    if(b.textContent.includes('→')) b.textContent = nextLabels[curLang]||'Next →';
+  });
 }
 
 // ══════════════════════════════
@@ -1983,17 +2050,16 @@ function renderTodayPopupContent(look){
   let reason = '', sub = '';
   if(liveWeatherData){
     const temp = liveWeatherData.temp;
-    if(temp <= 0)       { reason='오늘 매우 춥네요';         sub=`${toDisplayTemp(temp)}${unitLabel()} — 두꺼운 패딩이나 코트를 꼭 챙기세요`; }
-    else if(temp <= 5)  { reason='쌀쌀한 날이에요';          sub=`${toDisplayTemp(temp)}${unitLabel()} — 겨울 아우터가 필요한 날씨예요`; }
-    else if(temp <= 10) { reason='선선해요';                  sub=`${toDisplayTemp(temp)}${unitLabel()} — 얇은 겉옷 하나 챙기면 좋아요`; }
-    else if(temp <= 15) { reason='기온이 포근해요';           sub=`${toDisplayTemp(temp)}${unitLabel()} — 레이어링하기 딱 좋은 날씨`; }
-    else if(temp <= 20) { reason='봄/가을 날씨예요';          sub=`${toDisplayTemp(temp)}${unitLabel()} — 라이트 착장으로 여유롭게`; }
-    else if(temp <= 25) { reason='따뜻하고 좋은 날씨예요';    sub=`${toDisplayTemp(temp)}${unitLabel()} — 가볍게 입어도 충분해요`; }
-    else                { reason='더운 날이에요';             sub=`${toDisplayTemp(temp)}${unitLabel()} — 시원하고 통기성 좋은 착장 추천`; }
-    
+    if(temp <= 0)       { reason=t('wx_very_cold');      sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_very_cold_sub')}`; }
+    else if(temp <= 5)  { reason=t('wx_chilly');         sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_chilly_sub')}`; }
+    else if(temp <= 10) { reason=t('wx_cool');           sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_cool_sub')}`; }
+    else if(temp <= 15) { reason=t('wx_mild');           sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_mild_sub')}`; }
+    else if(temp <= 20) { reason=t('wx_spring_fall');    sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_spring_fall_sub')}`; }
+    else if(temp <= 25) { reason=t('wx_warm');           sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_warm_sub')}`; }
+    else                { reason=t('wx_hot');            sub=`${toDisplayTemp(temp)}${unitLabel()} — ${t('wx_hot_sub')}`; }
   } else {
-    reason = `${sm.emoji} ${sm.label} 착장을 추천해요`;
-    sub = look.date ? `마지막 착용: ${look.date}` : '';
+    reason = `${sm.emoji} ${t(look.season||'spring')} ${t('season_reco').replace('{season}','')||''}`;
+    sub = look.date ? `${t('last_worn').replace('{date}',look.date)}` : '';
   }
 
   const htags = (look.hashtags||[]).slice(0,3).map(h=>`<span class="htag-pill">#${h}</span>`).join('');
@@ -2021,7 +2087,7 @@ function renderTodayPopupContent(look){
           <button class="popup-worn-btn ${worn?'worn':''}" onclick="toggleWornPopup('${look.id}',this)">
             ${worn ? `✓ ${t('worn_today')}` : `◎ ${t('worn_today')}`}
           </button>
-          <button class="popup-random-btn" onclick="closeModal('today-popup');openRandom()">✦ 랜덤 뽑기</button>
+          <button class="popup-random-btn" onclick="closeModal('today-popup');openRandom()">✦ <span data-i="random">랜덤 뽑기</span></button>
         </div>
       </div>
     </div>
@@ -2108,7 +2174,7 @@ function openTab(name){
     const tb=document.getElementById(`tab-${tabName}`); if(tb) tb.classList.toggle('active',tabName===name);
   });
   // all panels including premium and settings
-  ['looks','stats','premium','settings'].forEach(tabName=>{
+  ['looks','stats','hashtag','premium','settings'].forEach(tabName=>{
     const pn=document.getElementById('panel-'+tabName); if(pn) pn.classList.toggle('active',tabName===name);
   });
   if(name==='stats') renderStats();
@@ -2228,6 +2294,10 @@ function renderGrid(){
   const grid=document.getElementById('grid');
   const list=getFiltered();
   const _rc=document.getElementById('result-count'); if(_rc) _rc.textContent=`${list.length} outfit${list.length!==1?'s':''}`;
+  // Update hashtag tab count
+  const allTags = getAllTags();
+  const htc = document.getElementById('hashtag-tab-count');
+  if(htc) htc.textContent = allTags.length > 0 ? allTags.length : '';
   updateCounts();
   if(!list.length){ grid.innerHTML=`<div class="empty-state"><div class="eico">🪞</div><p>${t('no_looks')}</p><small>${t('add_first')}</small></div>`; return; }
   grid.innerHTML=list.map((l,i)=>cardHtml(l,i)).join('');
@@ -2860,7 +2930,7 @@ function saveLook(){
 
   } catch(err) {
     console.error('saveLook error:', err);
-    showToast('저장 중 오류가 발생했어요: ' + err.message);
+    showToast((curLang==='ko'?'저장 중 오류가 발생했어요: ':'Save error: ') + err.message);
   }
 }
 
@@ -2877,22 +2947,54 @@ function openDetail(id){ const look=looks.find(l=>l.id===id); if(!look) return; 
 function renderDetail(look){
   const sm=SM[look.season]||{}, wm=WM[look.weather]||{};
   const worn=wornToday.includes(look.id);
-  const chips=Object.entries(SM).map(([k,m])=>`<button class="se-chip ${k===look.season?m.se:''}" onclick="changeSeason('${look.id}','${k}')">${m.emoji} ${t(k)}</button>`).join('');
-  const htags=(look.hashtags||[]).map(ht=>`<span class="htag-pill" onclick="filterByHtag('${ht}')">#${ht}</span>`).join('');
-  const dots=(look.colors||[]).map(cid=>{ const c=COLORS.find(x=>x.id===cid); return c?`<div class="detail-color-dot" style="background:${c.hex}" title="${c.label}"></div>`:''; }).join('');
-  const vibes=(look.vibes||[]).join(' · ');
+
+  const chips=Object.entries(SM).map(([k,m])=>
+    `<button class="se-chip ${k===look.season?m.se:''}" onclick="changeSeason('${look.id}','${k}')">${m.emoji} ${t(k)}</button>`
+  ).join('');
+
+  const wxChips=Object.entries(WM).map(([k,m])=>
+    `<button class="se-chip ${k===look.weather?'wx-sel-'+k:''}" style="${k===look.weather?'border-color:var(--'+k+'-fg,var(--accent));background:var(--'+k+'-bg,var(--accent-light));color:var(--'+k+'-fg,var(--accent));font-weight:600':''}" onclick="changeWeather('${look.id}','${k}')">${m.emoji} ${t(k)}</button>`
+  ).join('');
+
+  const colorRow = COLORS.map(col=>{
+    const sel = (look.colors||[]).includes(col.id);
+    return `<div onclick="toggleDetailColor('${look.id}','${col.id}',this)" data-cid="${col.id}"
+      class="detail-color-swatch ${sel?'sel':''}"
+      style="background:${col.hex};${col.border?'border-color:'+col.border:'border-color:transparent'}"
+      title="${col.label}"></div>`;
+  }).join('');
+
+  const vibePicker = VIBES.map(v=>{
+    const sel=(look.vibes||[]).includes(v);
+    return `<button onclick="toggleDetailVibe('${look.id}','${v}',this)" class="vibe-chip ${sel?'sel':''}">${v}</button>`;
+  }).join('');
+
+  const htags=(look.hashtags||[]).map(ht=>`<span class="htag-pill">#${ht}</span>`).join('');
+
   document.getElementById('detail-body').innerHTML=`
     ${look.photo?`<img class="detail-img" src="${look.photo}" alt="">`:`<div class="detail-nophoto">${sm.emoji||'👗'}</div>`}
-    <div class="sublabel">${t('season')}</div>
-    <div class="season-edit-row">${chips}</div>
-    <div class="detail-meta">
-      <span class="tag ${sm.tag}">${sm.emoji} ${sm.label}</span>
-      ${look.weather?`<span class="wbadge ${wm.cls}">${wm.emoji} ${t(look.weather)}</span>`:''}
-      <span class="detail-date">${look.date||''}</span>
+
+    <div class="detail-edit-row">
+      <div class="season-edit-row">${chips}</div>
     </div>
-    ${dots?`<div class="detail-colors">${dots}${vibes?`<span style="font-size:11px;color:var(--text-muted);margin-left:6px;font-family:'DM Mono',monospace">${vibes}</span>`:''}</div>`:''}
-    ${htags?`<div class="detail-htags">${htags}</div>`:''}
+
+    <div class="detail-edit-row">
+      <div class="season-edit-row">${wxChips}</div>
+    </div>
+
+    <div class="detail-edit-row">
+      <div class="detail-color-row">${colorRow}</div>
+    </div>
+
+    <div class="detail-edit-row">
+      <div class="vibe-picker" style="display:flex;flex-wrap:wrap;gap:5px">${vibePicker}</div>
+    </div>
+
+    ${htags?`<div class="detail-htags" style="margin-top:4px">${htags}</div>`:''}
     ${look.note?`<p class="detail-note">${look.note}</p>`:''}
+
+    ${look.date?`<div style="font-size:11px;color:var(--text-muted);margin-top:6px;margin-bottom:8px;font-family:'DM Mono',monospace">${formatDate(look.date)}</div>`:''}
+
     <div class="detail-actions">
       <button class="detail-worn-btn ${worn?'worn':''}" id="detail-worn-btn" onclick="toggleWornDetail('${look.id}')">
         ${worn?`✓ ${t('worn_today')}`:`◎ ${t('worn_today')}`}
@@ -2901,13 +3003,46 @@ function renderDetail(look){
     </div>
   `;
 }
-function toggleWornDetail(id){
-  if(wornToday.includes(id)){ wornToday=wornToday.filter(x=>x!==id); }
-  else { wornToday.push(id); showToast(t('worn_marked')); }
-  localStorage.setItem('lookbook_worn_'+todayKey,JSON.stringify(wornToday));
-  const look=looks.find(l=>l.id===id); if(look) renderDetail(look);
+
+
+function changeWeather(id, newWx){
+  const look = looks.find(l=>l.id===id); if(!look || look.weather===newWx) return;
+  look.weather = newWx;
+  try { persist(); } catch(e){}
+  renderGrid();
+  renderDetail(look);
+  const wm = WM[newWx]||{};
+  showToast(`${wm.emoji} ${t(newWx)}`);
+}
+
+function toggleDetailColor(id, cid, el){
+  const look = looks.find(l=>l.id===id); if(!look) return;
+  if(!look.colors) look.colors = [];
+  if(look.colors.includes(cid)){
+    look.colors = look.colors.filter(x=>x!==cid);
+    el.classList.remove('sel');
+  } else if(look.colors.length < 3){
+    look.colors.push(cid);
+    el.classList.add('sel');
+  }
+  try { persist(); } catch(e){}
   renderGrid();
 }
+
+function toggleDetailVibe(id, vibe, el){
+  const look = looks.find(l=>l.id===id); if(!look) return;
+  if(!look.vibes) look.vibes = [];
+  if(look.vibes.includes(vibe)){
+    look.vibes = look.vibes.filter(x=>x!==vibe);
+    el.classList.remove('sel');
+  } else if(look.vibes.length < 2){
+    look.vibes.push(vibe);
+    el.classList.add('sel');
+  }
+  try { persist(); } catch(e){}
+  renderGrid();
+}
+
 function changeSeason(id,newS){
   const look=looks.find(l=>l.id===id); if(!look||look.season===newS) return;
   look.season=newS; persist(); renderGrid(); renderDetail(look);
@@ -2984,7 +3119,7 @@ function spinRandom(){
   }
 
   // Disable spin btn during animation
-  if(spinBtn){ spinBtn.classList.add('spinning'); spinBtn.textContent='뽑는 중…'; }
+  if(spinBtn){ spinBtn.classList.add('spinning'); spinBtn.textContent=t('loading_reco')||'Loading…'; }
   if(display){ display.innerHTML=''; display.style.opacity='1'; }
 
   // Build shuffle sequence — more frames for more drama (up to 8 + final)
@@ -3073,7 +3208,7 @@ function showFinalLook(look, spinBtn){
     `;
 
     // Re-enable spin btn
-    if(spinBtn){ spinBtn.classList.remove('spinning'); spinBtn.innerHTML='🎲 <span>다시 뽑기</span>'; }
+    if(spinBtn){ spinBtn.classList.remove('spinning'); spinBtn.innerHTML=`🎲 <span>${t('spin_again')||'Spin Again'}</span>`; }
   }, 200);
 }
 
@@ -3193,14 +3328,59 @@ function unlockLux(){
 
 // Intercept stats tab — lock if not Lux
 function openTabWithLock(name){ openTab(name); } // stats free for all
+function openLuxHashtag(){
+  openTab('hashtag');
+}
+
+function openLuxHashtags(){
+  // Show Lux teaser modal for hashtags
+  const allTags = getAllTags();
+  const tagCount = allTags.length;
+  const preview = allTags.slice(0,4).map(([tag,cnt]) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:500">#${tag} <span style="font-size:10px;opacity:.7">${cnt}</span></span>`
+  ).join('');
+
+  // Create teaser overlay
+  const existing = document.getElementById('lux-hashtag-modal');
+  if(existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'lux-hashtag-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 16px 16px;padding:28px 24px;width:100%;max-width:460px;text-align:center;box-shadow:0 -4px 40px rgba(0,0,0,.15)">
+      <div style="font-size:28px;margin-bottom:8px">🏷️</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-style:italic;margin-bottom:6px"># Hashtags</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">You have <strong style="color:var(--text-primary)">${tagCount} tag${tagCount!==1?'s':''}</strong> saved · Browse and filter by hashtag</div>
+      ${preview ? `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px">${preview}${tagCount>4?`<span style="padding:4px 10px;border-radius:8px;background:var(--bg);color:var(--text-muted);font-size:12px">+${tagCount-4} more</span>`:''}
+      </div>` : ''}
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(232,201,106,.1));border:1.5px solid rgba(201,168,76,.3);border-radius:12px;padding:14px;margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#C9A84C;margin-bottom:4px">✦ CLOSETTE LUX</div>
+        <div style="font-size:13px;color:var(--text-secondary)">Hashtag browsing, filtering, and analytics are coming in Lux 🌟</div>
+      </div>
+      <button onclick="document.getElementById('lux-hashtag-modal').remove()" style="width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-primary);cursor:pointer">Got it ✓</button>
+    </div>`;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 
 // ══════════════════════════════
 //  SETTINGS
 // ══════════════════════════════
 function changeLang(lang){
-  curLang=lang; localStorage.setItem('lookbook_lang',lang);
-  const _ls2=document.getElementById('settings-lang-sub'); if(_ls2) _ls2.textContent={ko:'한국어',en:'English',ja:'日本語',zh:'中文'}[lang];
-  applyI18n(); renderGrid(); renderStats(); renderHtagPanel();
+  curLang = lang;
+  localStorage.setItem('lookbook_lang', lang);
+  const _ls2 = document.getElementById('settings-lang-sub');
+  if(_ls2) _ls2.textContent = {ko:'한국어',en:'English',ja:'日本語',zh:'中文'}[lang];
+  applyI18n();
+  try { renderGrid(); } catch(e){}
+  try { renderStats(); } catch(e){}
+  try { updateTitle(); } catch(e){}
+  try { renderPrivacyPolicy(); } catch(e){}
+  if(liveWeatherData) try { showWeatherUI(liveWeatherData.temp, liveWeatherData.wx); } catch(e){}
+  const _sc = document.getElementById('settings-count-sub');
+  if(_sc) _sc.textContent = `${looks.length}${lang==='en'?' looks':lang==='ja'?' コーデ':lang==='zh'?' 套':'개'}`;
+  try { initNotifUI(); } catch(e){}
 }
 function applyThemeSelect(name){ applyThemeByName(name); document.querySelectorAll('#theme-grid .theme-swatch').forEach(el=>el.classList.toggle('active',el.dataset.theme===name)); }
 function clearAll(){ if(!confirm(t('confirm_all'))) return; looks=[]; persist(); renderGrid(); renderStats(); renderHtagPanel(); showToast(t('deleted')); }
@@ -3233,10 +3413,10 @@ function updateNotifStatus(){
     return;
   }
   if(Notification.permission === 'denied'){
-    el.textContent = '⚠️ 브라우저 설정에서 알림을 허용해주세요';
+    el.textContent = '⚠️ ' + (t('notif_denied')||'Please allow notifications in browser settings');
     return;
   }
-  el.textContent = notifEnabled ? `✓ 매일 ${notifTime}에 알림이 전송돼요` : '';
+  el.textContent = notifEnabled ? t('notif_active').replace('{time}',notifTime) : '';
 }
 
 async function toggleNotif(el){
@@ -3339,7 +3519,7 @@ function toggleTempUnit(){
   updateUnitToggleUI();
   // Re-render weather strip with new unit
   if(liveWeatherData) showWeatherUI(liveWeatherData.temp, liveWeatherData.wx);
-  showToast(tempUnit === 'F' ? 'Switched to °F' : '°C로 변경됐어요');
+  showToast(tempUnit === 'F' ? 'Switched to °F' : 'Switched to °C');
 }
 
 function updateUnitToggleUI(){
@@ -3499,8 +3679,8 @@ function showInstallBanner(){
   `;
   banner.innerHTML = `
     <span style="font-size:20px">📱</span>
-    <span>홈 화면에 앱으로 설치할 수 있어요</span>
-    <button onclick="installPWA()" style="padding:6px 14px;border-radius:7px;background:white;color:var(--text-primary);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">설치</button>
+    <span id="install-banner-text">Add to Home Screen</span>
+    <button onclick="installPWA()" style="padding:6px 14px;border-radius:7px;background:white;color:var(--text-primary);border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" id="install-banner-btn">Install</button>
     <button onclick="dismissInstall()" style="padding:6px;border-radius:50%;background:rgba(255,255,255,.2);color:white;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:flex;align-items:center;justify-content:center">×</button>
   `;
   document.body.appendChild(banner);
