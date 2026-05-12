@@ -101,7 +101,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .tab-badge{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:600;padding:1px 5px;border-radius:9999px}
 
 /* ── LAYOUT ── */
-.app-body{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 60px - 37px - 41px)}
+.app-body{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 60px - 37px - 41px);align-items:start}
 .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:4px}
 .sidebar-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:0 8px;margin-bottom:2px;margin-top:12px}
 .sidebar-label:first-child{margin-top:0}
@@ -127,9 +127,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .s-div{height:1px;background:var(--border);margin:6px 0}
 
 /* ── PANELS ── */
-.panels{overflow-y:auto;flex:1}
-.panel{padding:22px;display:none;min-height:200px}
-.panel.active{display:block}
+
+.panel{padding:22px;display:none}
+.panel.active{display:block !important;min-height:50vh;width:100%;overflow:visible}
 .panel-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
 .panel-title{font-family:'Playfair Display',serif;font-size:26px;line-height:1.1;letter-spacing:-.02em}
 .panel-title em{font-style:italic;color:var(--text-secondary)}
@@ -202,7 +202,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .htag-results-label{font-size:11px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
 
 /* ── SETTINGS PANEL ── */
-.settings-section{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:11px;margin-bottom:14px}
+.settings-section{background:#ffffff;border:1px solid #e8e8e8;border-radius:11px;margin-bottom:14px}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
 .settings-row:last-child{border-bottom:none}
 .settings-row-label{font-size:13px;font-weight:500;color:#1A1A1A}
@@ -481,8 +481,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
   }
 
   /* panels */
-  .panel { padding: 16px; }
-  .panel-title { font-size: 22px; }
+  
+  
 
   /* grid */
   .lookbook-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -524,8 +524,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
   .logo{font-size:18px}
   .menu-btn{width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px}
   .menu-btn-bar{width:16px;height:1.5px;background:var(--text-primary);border-radius:2px;transition:all .22s}
-  .panel{padding:16px}
-  .panel-title{font-size:22px}
+  
+  
   .lookbook-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .tab-bar{overflow-x:auto;padding:0 16px}
   .tab-bar::-webkit-scrollbar{display:none}
@@ -873,6 +873,8 @@ body[data-theme='noir']{
       <div id="stats-content"></div>
 
     
+        </div>
+
     <!-- PREMIUM / LUX -->
     <div class="panel" id="panel-premium">
       <div class="panel-header">
@@ -888,7 +890,7 @@ body[data-theme='noir']{
     </div>
 
     <!-- SETTINGS -->
-    <div class="panel" id="panel-settings" style="background:#fff">
+    <div class="panel" id="panel-settings">
       <div class="panel-header"><h1 class="panel-title"><em data-i="settings_title">Settings</em></h1></div>
       <div class="settings-section">
         <div class="settings-section-title" data-i="region_lang">지역 & 언어</div>
@@ -2100,7 +2102,6 @@ function refreshReco(){ renderSmartReco(); }
 //  TABS
 // ══════════════════════════════
 function openTab(name){
-  console.log('openTab called:', name);
   if(name==='stats') setTimeout(renderStats, 50);
   // tabs in tab bar (settings no longer has a tab button)
   ['looks','stats'].forEach(tabName=>{
