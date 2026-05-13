@@ -977,20 +977,16 @@ body[data-theme='noir']{
       <div class="settings-section">
         <div class="settings-section-title" data-i="appearance">테마</div>
         <div class="settings-row">
-          <div><div class="settings-row-label" data-i="theme">컬러 테마</div><div class="settings-row-sub" data-i="theme_sub">앱 전체 색상을 변경해요</div></div>
+          <div class="settings-row-label" data-i="theme">Color Theme</div>
           <div class="settings-row-right">
             <select class="settings-select" id="theme-select" onchange="applyThemeSelect(this.value)">
               <option value="default">Default</option>
               <option value="earth">Earth</option>
             </select>
-            <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">✦ More themes available in Lux</div
           </div>
         </div>
         <div class="settings-row">
-          <div>
-            <div class="settings-row-label">Temperature Unit</div>
-            <div class="settings-row-sub" id="temp-unit-sub">Currently: Celsius (°C)</div>
-          </div>
+          <div class="settings-row-label">Temperature Unit</div>
           <div class="settings-row-right">
             <div class="unit-toggle" id="unit-toggle" onclick="toggleTempUnit()">
               <div class="unit-option" id="unit-c">°C</div>
@@ -1220,17 +1216,6 @@ body[data-theme='noir']{
   </button>
 
 
-
-  <!-- Lux -->
-  <div style="margin-bottom:6px;padding:10px 12px;border-radius:10px;border:1.5px dashed rgba(201,168,76,.5);background:rgba(201,168,76,.05);cursor:not-allowed;opacity:.8">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:16px">✦</span>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:#C9A84C;font-family:'DM Sans',sans-serif">Closette Lux</div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:1px">✨ Coming soon — good things take time</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Lux -->
   <button onclick="closeDrawer();openTab('premium')" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #C9A84C;background:rgba(201,168,76,.06);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;transition:all .13s;margin-bottom:6px">
@@ -2018,6 +2003,7 @@ function maybeShowTodayPopup(){
 function openTodayPopup(){
   renderTodayPopupContent();
   openModal('today-popup');
+  try { applyI18n(); } catch(e){}
 }
 
 function renderTodayPopupContent(look){
